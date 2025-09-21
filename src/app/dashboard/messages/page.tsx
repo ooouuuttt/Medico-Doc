@@ -89,7 +89,7 @@ export default function MessagesPage() {
               </Avatar>
               <CardTitle className="m-0">{selectedPatient.name}</CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 p-0 overflow-hidden">
+            <CardContent className="flex-1 p-0 overflow-y-auto">
                 <ScrollArea className="h-full p-6">
                     <div className="flex flex-col gap-4">
                         {messages.map((message) => (
