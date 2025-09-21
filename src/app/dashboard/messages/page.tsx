@@ -79,7 +79,7 @@ export default function MessagesPage() {
         </CardContent>
       </Card>
 
-      <Card className="md:col-span-2 flex flex-col">
+      <Card className="md:col-span-2 flex flex-col h-full">
         {selectedPatient ? (
           <>
             <CardHeader className="flex flex-row items-center gap-3 border-b">
@@ -89,7 +89,7 @@ export default function MessagesPage() {
               </Avatar>
               <CardTitle className="m-0">{selectedPatient.name}</CardTitle>
             </CardHeader>
-            <CardContent className="flex-grow p-0">
+            <CardContent className="flex-grow p-0 overflow-hidden">
                 <ScrollArea className="h-full p-6">
                     <div className="flex flex-col gap-4">
                         {messages.map((message) => (
@@ -116,7 +116,7 @@ export default function MessagesPage() {
                     </div>
                 </ScrollArea>
             </CardContent>
-            <div className="p-4 border-t">
+            <div className="p-4 border-t mt-auto">
               <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                 <Input
                   value={newMessage}
