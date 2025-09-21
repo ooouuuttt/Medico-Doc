@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { patients } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,8 +11,10 @@ import { Button } from '@/components/ui/button';
 import { MessageSquare, Video } from 'lucide-react';
 import PrescriptionGenerator from './prescription-generator';
 
-export default function PatientDetailPage({ params }: { params: { id: string } }) {
-  const patient = patients.find((p) => p.id === params.id);
+export default function PatientDetailPage() {
+  const params = useParams();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const patient = patients.find((p) => p.id === id);
   const [healthRecords, setHealthRecords] = useState(patient?.healthRecords || '');
 
   if (!patient) {
