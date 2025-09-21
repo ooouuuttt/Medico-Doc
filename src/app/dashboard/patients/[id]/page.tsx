@@ -6,6 +6,7 @@ import SymptomSummarizer from './symptom-summarizer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, MessageSquare, Video } from 'lucide-react';
+import PrescriptionGenerator from './prescription-generator';
 
 export default function PatientDetailPage({ params }: { params: { id: string } }) {
   const patient = patients.find((p) => p.id === params.id);
@@ -50,17 +51,9 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
       <div className="md:col-span-2">
         <SymptomSummarizer healthRecords={patient.healthRecords} />
         
-        <Card className="mt-6">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5"/> Prescription Generator</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p className="text-muted-foreground text-sm mb-4">
-                    Create and manage digital prescriptions for the patient.
-                </p>
-                <Button className="bg-accent text-accent-foreground hover:bg-accent/80">Generate New Prescription</Button>
-            </CardContent>
-        </Card>
+        <div className="mt-6">
+          <PrescriptionGenerator />
+        </div>
       </div>
     </div>
   );
