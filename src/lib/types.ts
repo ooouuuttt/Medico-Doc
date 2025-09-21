@@ -1,3 +1,11 @@
+
+export type Message = {
+  id: string;
+  sender: 'doctor' | 'patient';
+  text: string;
+  timestamp: string;
+};
+
 export type Patient = {
   id: string;
   name: string;
@@ -6,6 +14,7 @@ export type Patient = {
   lastVisit: string;
   avatar: string;
   healthRecords: string;
+  messages?: Message[];
 };
 
 export type Appointment = {

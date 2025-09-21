@@ -1,5 +1,8 @@
-import type { Patient, Appointment, Doctor } from './types';
+
+import type { Patient, Appointment, Doctor, Message } from './types';
 import { PlaceHolderImages } from './placeholder-images';
+
+export type { Message };
 
 export const doctor: Doctor = {
   name: 'Anjali Sharma',
@@ -16,6 +19,11 @@ export const patients: Patient[] = [
     lastVisit: '2023-10-15',
     avatar: PlaceHolderImages.find(img => img.id === '2')?.imageUrl || '',
     healthRecords: `Patient reports intermittent chest pain, especially during physical exertion. History of hypertension, managed with medication. Non-smoker. Family history of heart disease. Recent EKG shows minor abnormalities. Cholesterol levels are slightly elevated. Patient also complains of occasional shortness of breath.`,
+    messages: [
+      { id: '1', sender: 'patient', text: 'Good morning, Doctor. I\'m still feeling some chest discomfort.', timestamp: '10:30 AM' },
+      { id: '2', sender: 'doctor', text: 'Good morning, Rohan. Please describe the discomfort. Is it sharp or dull?', timestamp: '10:32 AM' },
+      { id: '3', sender: 'patient', text: 'It\'s a dull ache, mostly when I walk up the stairs.', timestamp: '10:35 AM' },
+    ],
   },
   {
     id: '2',
@@ -25,6 +33,12 @@ export const patients: Patient[] = [
     lastVisit: '2023-11-01',
     avatar: PlaceHolderImages.find(img => img.id === '3')?.imageUrl || '',
     healthRecords: `32-year-old female presenting with persistent dry cough and fatigue for the past 3 weeks. Denies fever. Works in a crowded office environment. Reports difficulty sleeping due to cough. No significant past medical history. Seasonal allergies reported, usually managed with over-the-counter antihistamines.`,
+    messages: [
+        { id: '1', sender: 'patient', text: 'Hello Dr. Sharma, I wanted to follow up on my cough.', timestamp: 'Yesterday' },
+        { id: '2', sender: 'doctor', text: 'Hello Priya, how have you been feeling since our last appointment?', timestamp: 'Yesterday' },
+        { id: '3', sender: 'patient', text: 'The cough is still there, especially at night. The medicine helps a bit.', timestamp: '9:00 AM' },
+        { id: '4', sender: 'doctor', text: 'Okay, let\'s monitor it for another two days. If it doesn\'t improve, we may need to try a different approach.', timestamp: '9:05 AM' },
+    ],
   },
   {
     id: '3',
@@ -34,6 +48,9 @@ export const patients: Patient[] = [
     lastVisit: '2023-11-20',
     avatar: PlaceHolderImages.find(img => img.id === '4')?.imageUrl || '',
     healthRecords: `Patient with Type 2 Diabetes, struggling with glucose control. Reports symptoms of polyuria and polydipsia. Last HbA1c was 8.5%. Also manages high blood pressure. Complains of tingling sensation in feet. Diet adherence is a challenge for the patient.`,
+    messages: [
+        { id: '1', sender: 'patient', text: 'Doctor, I\'ve been checking my sugar levels and they are high.', timestamp: '2 days ago' },
+    ],
   },
   {
     id: '4',
@@ -43,6 +60,10 @@ export const patients: Patient[] = [
     lastVisit: '2023-12-05',
     avatar: PlaceHolderImages.find(img => img.id === '5')?.imageUrl || '',
     healthRecords: `Patient reports severe migraine headaches, occurring 3-4 times per month. Headaches are accompanied by nausea and sensitivity to light. Current medication provides only partial relief. No other neurological symptoms. Seeking alternative treatment options.`,
+    messages: [
+      { id: '1', sender: 'patient', text: 'Can I reschedule my next appointment?', timestamp: 'Yesterday' },
+      { id: '2', sender: 'doctor', text: 'Of course, please call the clinic to find a suitable time.', timestamp: 'Yesterday' },
+    ]
   },
   {
     id: '5',
@@ -52,6 +73,10 @@ export const patients: Patient[] = [
     lastVisit: '2024-01-10',
     avatar: PlaceHolderImages.find(img => img.id === '6')?.imageUrl || '',
     healthRecords: `28-year-old male athlete with right knee pain following a football injury. Swelling and instability reported. MRI results suggest a possible ACL tear. Pain is significant when walking. Patient is anxious about long-term impact on his athletic career.`,
+    messages: [
+      { id: '1', sender: 'patient', text: 'I have the MRI report. Should I send it to you?', timestamp: '1:00 PM' },
+      { id: '2', sender: 'doctor', text: 'Yes, please upload it to the patient portal.', timestamp: '1:02 PM' },
+    ],
   },
 ];
 
