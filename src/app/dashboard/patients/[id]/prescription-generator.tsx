@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useRef } from 'react';
@@ -34,13 +35,11 @@ function SubmitButton() {
   );
 }
 
-export default function PrescriptionGenerator() {
+export default function PrescriptionGenerator({ healthRecords }: { healthRecords: string }) {
   const [state, formAction] = useActionState(createPrescription, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-   const healthRecords = typeof document !== 'undefined' ? (document.querySelector('textarea[name="healthRecords"]') as HTMLTextAreaElement)?.value : '';
-
-
+  
   useEffect(() => {
     if (state.message && state.message !== 'success') {
       toast({
@@ -63,7 +62,7 @@ export default function PrescriptionGenerator() {
           Use the patient's health records above to generate a digital prescription.
         </p>
         <form ref={formRef} action={formAction}>
-           <input type="hidden" name="healthRecords" value={healthRecords} />
+           <input type="hidden" name="healthRecords" value={healthRecords || ''} />
           <SubmitButton />
         </form>
 

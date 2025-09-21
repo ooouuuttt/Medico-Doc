@@ -1,15 +1,19 @@
+
+'use client';
+
+import { useState } from 'react';
 import { notFound } from 'next/navigation';
 import { patients } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import SymptomSummarizer from './symptom-summarizer';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, MessageSquare, Video } from 'lucide-react';
+import { MessageSquare, Video } from 'lucide-react';
 import PrescriptionGenerator from './prescription-generator';
 
 export default function PatientDetailPage({ params }: { params: { id: string } }) {
   const patient = patients.find((p) => p.id === params.id);
+  const [healthRecords, setHealthRecords] = useState(patient?.healthRecords || '');
 
   if (!patient) {
     notFound();
@@ -49,10 +53,13 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
         </Card>
       </div>
       <div className="md:col-span-2">
-        <SymptomSummarizer healthRecords={patient.healthRecords} />
+        <SymptomSummarizer 
+          healthRecords={healthRecords} 
+          onHealthRecordsChange={setHealthRecords}
+        />
         
         <div className="mt-6">
-          <PrescriptionGenerator />
+          <PrescriptionGenerator healthRecords={healthRecords} />
         </div>
       </div>
     </div>

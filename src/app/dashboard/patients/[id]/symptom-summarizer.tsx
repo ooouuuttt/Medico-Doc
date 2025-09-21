@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useFormStatus } from 'react-dom';
@@ -7,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useActionState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Bot, Loader2, Sparkles } from 'lucide-react';
+import { Bot, Loader2, Sparkles } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const initialState: FormState = {
@@ -31,7 +32,13 @@ function SubmitButton() {
   );
 }
 
-export default function SymptomSummarizer({ healthRecords }: { healthRecords: string }) {
+export default function SymptomSummarizer({ 
+  healthRecords,
+  onHealthRecordsChange
+}: { 
+  healthRecords: string;
+  onHealthRecordsChange: (value: string) => void;
+}) {
   const [state, formAction] = useActionState(getSummary, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
@@ -59,7 +66,8 @@ export default function SymptomSummarizer({ healthRecords }: { healthRecords: st
         <form ref={formRef} action={formAction} className="grid gap-4">
           <Textarea
             name="healthRecords"
-            defaultValue={healthRecords}
+            value={healthRecords}
+            onChange={(e) => onHealthRecordsChange(e.target.value)}
             rows={8}
             className="text-sm"
             placeholder="Enter patient health records here..."
