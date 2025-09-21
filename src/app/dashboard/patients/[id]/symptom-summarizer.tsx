@@ -1,11 +1,11 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { getSummary, type FormState } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { useEffect, useRef } from 'react';
+import { useActionState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, Bot, Loader2, Sparkles } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -32,7 +32,7 @@ function SubmitButton() {
 }
 
 export default function SymptomSummarizer({ healthRecords }: { healthRecords: string }) {
-  const [state, formAction] = useFormState(getSummary, initialState);
+  const [state, formAction] = useActionState(getSummary, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
 
