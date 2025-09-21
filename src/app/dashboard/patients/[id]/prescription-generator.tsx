@@ -12,8 +12,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 
-import { FileText, Loader2, Sparkles, PlusCircle, Trash2, Save, XCircle } from 'lucide-react';
+import { FileText, Loader2, Sparkles, PlusCircle, Trash2, Save, XCircle, Printer } from 'lucide-react';
 
 const initialState: PrescriptionFormState = {
   message: '',
@@ -53,6 +62,8 @@ export default function PrescriptionGenerator({ healthRecords }: { healthRecords
     followUp: '',
   });
 
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
   useEffect(() => {
     if (state.message && state.message !== 'success') {
       toast({
@@ -88,13 +99,32 @@ export default function PrescriptionGenerator({ healthRecords }: { healthRecords
     setPrescription({ ...prescription, medications: updatedMedications });
   };
   
-  const handleSave = () => {
-    // Implement save logic here, e.g., send to a database
+  const handleOpenPreview = () => {
+    const isPrescriptionEmpty = 
+      prescription.medications.every(med => !med.name && !med.dosage && !med.frequency) &&
+      !prescription.instructions &&
+      !prescription.followUp;
+
+    if (isPrescriptionEmpty) {
+      toast({
+        variant: 'destructive',
+        title: 'Empty Prescription',
+        description: 'Please add at least one medication or instruction before saving.',
+      });
+      return;
+    }
+    setIsPreviewOpen(true);
+  };
+
+  const handleConfirmSave = () => {
+    // Implement actual save logic here, e.g., send to a database
+    setIsPreviewOpen(false);
     toast({
         title: 'Prescription Saved',
         description: 'The prescription has been saved successfully.',
     });
   };
+
 
   const clearForm = () => {
     setPrescription({
@@ -105,6 +135,7 @@ export default function PrescriptionGenerator({ healthRecords }: { healthRecords
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -164,10 +195,63 @@ export default function PrescriptionGenerator({ healthRecords }: { healthRecords
         </div>
 
         <div className="mt-6 flex gap-2">
-            <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/> Save Prescription</Button>
+            <Button onClick={handleOpenPreview}><Save className="mr-2 h-4 w-4"/> Save Prescription</Button>
             <Button variant="outline" onClick={clearForm}><XCircle className="mr-2 h-4 w-4"/> Clear</Button>
         </div>
       </CardContent>
     </Card>
+
+    <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+                <DialogTitle className="text-2xl font-headline">Prescription Preview</DialogTitle>
+                <DialogDescription>
+                    Please review the prescription details below before saving.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto px-2">
+                <div>
+                    <h3 className="font-semibold text-lg mb-2 border-b pb-1">Medications</h3>
+                    {prescription.medications.filter(m => m.name).length > 0 ? (
+                        <ul className="space-y-3">
+                            {prescription.medications.filter(m => m.name).map((med, index) => (
+                                <li key={index} className="grid grid-cols-3 gap-1 text-sm">
+                                    <span className="font-medium col-span-3">{med.name}</span>
+                                    <span className="text-muted-foreground">{med.dosage}</span>
+                                    <span className="text-muted-foreground col-span-2">{med.frequency}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-sm text-muted-foreground">No medications prescribed.</p>
+                    )}
+                </div>
+
+                 <div>
+                    <h3 className="font-semibold text-lg mb-2 border-b pb-1">Instructions</h3>
+                    <p className="text-sm text-muted-foreground">{prescription.instructions || 'No special instructions.'}</p>
+                </div>
+
+                <div>
+                    <h3 className="font-semibold text-lg mb-2 border-b pb-1">Follow-Up</h3>
+                    <p className="text-sm text-muted-foreground">{prescription.followUp || 'No follow-up scheduled.'}</p>
+                </div>
+            </div>
+            <DialogFooter className="sm:justify-between">
+                <div>
+                  <Button variant="outline"><Printer className="mr-2 h-4 w-4"/> Print</Button>
+                </div>
+                <div className="flex gap-2">
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">
+                            Edit
+                        </Button>
+                    </DialogClose>
+                    <Button type="button" onClick={handleConfirmSave}>Confirm & Save</Button>
+                </div>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }
