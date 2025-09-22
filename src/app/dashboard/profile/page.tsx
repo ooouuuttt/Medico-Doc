@@ -12,6 +12,8 @@ import { Pencil, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth.tsx';
 import { useToast } from '@/hooks/use-toast';
 import { getDoctorProfile, updateUserProfile, type UserProfile } from '@/services/doctorService';
+import { updateProfile } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -61,7 +63,14 @@ export default function ProfilePage() {
     
     setIsLoading(true);
     try {
+      // Update Firestore
       await updateUserProfile(user.uid, profile);
+
+      // Update Firebase Auth displayName if it has changed
+      if (auth.currentUser && auth.currentUser.displayName !== profile.name) {
+        await updateProfile(auth.currentUser, { displayName: profile.name });
+      }
+
       setIsEditing(false);
       toast({
         title: 'Success',
