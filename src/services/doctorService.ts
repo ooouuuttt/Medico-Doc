@@ -21,7 +21,7 @@ export type UserProfile = {
  * @param additionalData Additional data to include in the profile.
  */
 export async function createDoctorProfile(user: User, additionalData: { name: string }) {
-  const userDocRef = doc(db, 'users', user.uid);
+  const userDocRef = doc(db, 'doctors', user.uid);
   const defaultProfile: UserProfile = {
     uid: user.uid,
     name: additionalData.name,
@@ -43,7 +43,7 @@ export async function createDoctorProfile(user: User, additionalData: { name: st
  * @returns The user profile object or null if not found.
  */
 export async function getDoctorProfile(uid: string): Promise<UserProfile | null> {
-  const userDocRef = doc(db, 'users', uid);
+  const userDocRef = doc(db, 'doctors', uid);
   const userDoc = await getDoc(userDocRef);
   if (userDoc.exists()) {
     return userDoc.data() as UserProfile;
@@ -57,6 +57,6 @@ export async function getDoctorProfile(uid: string): Promise<UserProfile | null>
  * @param data The partial profile data to update.
  */
 export async function updateUserProfile(uid: string, data: Partial<UserProfile>) {
-  const userDocRef = doc(db, 'users', uid);
+  const userDocRef = doc(db, 'doctors', uid);
   await setDoc(userDocRef, data, { merge: true });
 }
