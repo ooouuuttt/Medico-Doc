@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Pencil, Loader2 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth.tsx';
 import { useToast } from '@/hooks/use-toast';
 import { getDoctorProfile, updateUserProfile, type UserProfile } from '@/services/doctorService';
 
@@ -39,7 +39,7 @@ export default function ProfilePage() {
             consultationTimings: 'Mon - Fri, 9 AM - 5 PM',
             availability: 'Available for teleconsultation',
             license: 'Not Verified',
-            avatar: user.photoURL || `https://picsum.photos/seed/${user.uid}/100/100`,
+            avatar: user.photoURL || "https://images.unsplash.com/photo-1582750433449-648ed127bb54?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxkb2N0b3J8ZW58MHx8fHwxNzU4NTQ5NjU0fDA&ixlib=rb-4.1.0&q=80&w=1080",
           };
           await updateUserProfile(user.uid, defaultProfile);
           setProfile(defaultProfile);
