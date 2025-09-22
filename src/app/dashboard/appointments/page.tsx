@@ -81,7 +81,7 @@ export default function AppointmentsPage() {
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={appointment.patientAvatar} alt={appointment.patientName} data-ai-hint="person portrait" />
-                <AvatarFallback>{appointment.patientName.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{appointment.patientName?.charAt(0) || ''}</AvatarFallback>
               </Avatar>
               <span>{appointment.patientName}</span>
             </div>
