@@ -19,11 +19,13 @@ export type Patient = {
 
 export type Appointment = {
   id: string;
+  patientId: string;
   patientName: string;
   patientAvatar: string;
   time: string;
-  type: 'Video' | 'Chat';
-  status: 'Upcoming' | 'Completed' | 'Cancelled';
+  date: string;
+  type: 'video' | 'chat';
+  status: 'upcoming' | 'completed' | 'cancelled';
 };
 
 export type Doctor = {

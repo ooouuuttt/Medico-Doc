@@ -1,8 +1,10 @@
 
 'use client';
 
-import { useState } from 'react';
-import { File, ListFilter, MoreHorizontal } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { File, ListFilter, MoreHorizontal, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth.tsx';
+import { getAppointmentsForDoctor } from '@/services/appointmentService';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,38 +34,48 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { appointments } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { Appointment } from '@/lib/types';
 
 export default function AppointmentsPage() {
+  const { user } = useAuth();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [typeFilters, setTypeFilters] = useState<{ video: boolean; chat: boolean }>({
     video: true,
     chat: true,
   });
 
+  useEffect(() => {
+    async function fetchAppointments() {
+      if (user) {
+        setIsLoading(true);
+        const fetchedAppointments = await getAppointmentsForDoctor(user.uid);
+        setAppointments(fetchedAppointments);
+        setIsLoading(false);
+      }
+    }
+    fetchAppointments();
+  }, [user]);
+
   const handleTypeFilterChange = (type: 'video' | 'chat', checked: boolean) => {
     setTypeFilters(prev => ({ ...prev, [type]: checked }));
   };
   
   const filteredAppointments = appointments.filter(appointment => {
-    // Status filter (from tabs)
     const statusMatch = activeTab === 'all' || appointment.status.toLowerCase() === activeTab;
-
-    // Type filter (from dropdown)
     const selectedTypes = [];
-    if (typeFilters.video) selectedTypes.push('Video');
-    if (typeFilters.chat) selectedTypes.push('Chat');
-    const typeMatch = selectedTypes.length === 0 || selectedTypes.length === 2 || selectedTypes.includes(appointment.type);
-    
+    if (typeFilters.video) selectedTypes.push('video');
+    if (typeFilters.chat) selectedTypes.push('chat');
+    const typeMatch = selectedTypes.length === 0 || selectedTypes.length === 2 || selectedTypes.includes(appointment.type.toLowerCase());
     return statusMatch && typeMatch;
   });
 
-  const renderTableRows = (appointments: Appointment[]) => (
+  const renderTableRows = (appointmentsToRender: Appointment[]) => (
     <TableBody>
-      {appointments.map((appointment) => (
+      {appointmentsToRender.map((appointment) => (
         <TableRow key={appointment.id}>
           <TableCell className="font-medium">
             <div className="flex items-center gap-2">
@@ -75,23 +87,23 @@ export default function AppointmentsPage() {
             </div>
           </TableCell>
           <TableCell>
-            <Badge variant="outline">{appointment.type}</Badge>
+            <Badge variant="outline" className="capitalize">{appointment.type}</Badge>
           </TableCell>
           <TableCell>
             <Badge
               variant={
-                appointment.status === 'Completed'
+                appointment.status === 'completed'
                   ? 'default'
-                  : appointment.status === 'Cancelled'
+                  : appointment.status === 'cancelled'
                     ? 'destructive'
                     : 'secondary'
               }
-              className={cn(appointment.status === "Upcoming" && "bg-primary/20 text-primary border-primary/20 hover:bg-primary/30")}
+              className={cn(appointment.status === "upcoming" && "bg-primary/20 text-primary border-primary/20 hover:bg-primary/30", "capitalize")}
             >
               {appointment.status}
             </Badge>
           </TableCell>
-          <TableCell>{appointment.time}</TableCell>
+          <TableCell>{appointment.time} <br/> <span className="text-xs text-muted-foreground">{appointment.date}</span></TableCell>
           <TableCell>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -172,20 +184,30 @@ export default function AppointmentsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Patient</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            {renderTableRows(filteredAppointments)}
-          </Table>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-40">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : filteredAppointments.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Patient</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Time & Date</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              {renderTableRows(filteredAppointments)}
+            </Table>
+          ) : (
+            <div className="text-center py-10 text-muted-foreground">
+              No appointments found for the selected filters.
+            </div>
+          )}
         </CardContent>
         <CardFooter>
           <div className="text-xs text-muted-foreground">
