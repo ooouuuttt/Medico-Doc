@@ -10,59 +10,38 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Pencil, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-
-type UserProfile = {
-  name: string;
-  specialization: string;
-  email: string;
-  bio: string;
-  consultationTimings: string;
-  availability: string;
-  license: string;
-  avatar: string;
-};
+import { getDoctorProfile, updateUserProfile, type UserProfile } from '@/services/doctorService';
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [profile, setProfile] = useState<UserProfile>({
-    name: '',
-    specialization: '',
-    email: '',
-    bio: '',
-    consultationTimings: '',
-    availability: '',
-    license: 'Verified (Reg. #12345)', // Assuming license is static for now
-    avatar: 'https://picsum.photos/seed/doc1/100/100', // Default avatar
-  });
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     async function fetchProfile() {
       if (user) {
         setIsLoading(true);
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
+        const userProfile = await getDoctorProfile(user.uid);
 
-        if (userDoc.exists()) {
-          setProfile(userDoc.data() as UserProfile);
+        if (userProfile) {
+          setProfile(userProfile);
         } else {
           // If profile doesn't exist, create one with default values
-          const defaultProfile: UserProfile = {
+           const defaultProfile: UserProfile = {
+            uid: user.uid,
             name: user.displayName || 'Dr. User',
             email: user.email || '',
             specialization: 'General Physician',
             bio: 'Dedicated to providing the best patient care.',
             consultationTimings: 'Mon - Fri, 9 AM - 5 PM',
             availability: 'Available for teleconsultation',
-            license: 'Verified (Reg. #12345)',
-            avatar: user.photoURL || 'https://picsum.photos/seed/doc1/100/100',
+            license: 'Not Verified',
+            avatar: user.photoURL || `https://picsum.photos/seed/${user.uid}/100/100`,
           };
-          await setDoc(userDocRef, defaultProfile);
+          await updateUserProfile(user.uid, defaultProfile);
           setProfile(defaultProfile);
         }
         setIsLoading(false);
@@ -78,12 +57,11 @@ export default function ProfilePage() {
 
   const handleSaveClick = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !profile) return;
     
     setIsLoading(true);
-    const userDocRef = doc(db, 'users', user.uid);
     try {
-      await setDoc(userDocRef, profile, { merge: true });
+      await updateUserProfile(user.uid, profile);
       setIsEditing(false);
       toast({
         title: 'Success',
@@ -103,12 +81,14 @@ export default function ProfilePage() {
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
-    setProfile(prev => ({...prev, [id]: value}));
+    if (profile) {
+      setProfile(prev => ({...prev!, [id]: value}));
+    }
   }
 
-  if (isLoading && !profile.name) {
+  if (isLoading || !profile) {
     return (
-       <div className="flex items-center justify-center">
+       <div className="flex items-center justify-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
@@ -151,7 +131,7 @@ export default function ProfilePage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={profile.email} onChange={handleInputChange} disabled={!isEditing} />
+              <Input id="email" type="email" value={profile.email} onChange={handleInputChange} disabled={true} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="bio">About Me</Label>
@@ -169,7 +149,7 @@ export default function ProfilePage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="license">Medical License</Label>
-              <Input id="license" value={profile.license} disabled />
+              <Input id="license" value={profile.license} disabled={!isEditing} onChange={handleInputChange} />
             </div>
 
             {isEditing && (

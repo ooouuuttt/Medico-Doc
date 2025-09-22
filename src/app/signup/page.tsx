@@ -11,8 +11,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { auth, db } from "@/lib/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { auth } from "@/lib/firebase";
+import { createDoctorProfile } from "@/services/doctorService";
 
 export default function SignUpPage() {
   const [name, setName] = useState('');
@@ -29,27 +29,13 @@ export default function SignUpPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Update the user's profile with their name
-      if (user) {
-        await updateProfile(user, {
-          displayName: name,
-        });
-
-        // Create a default profile in Firestore
-        const userDocRef = doc(db, 'users', user.uid);
-        const defaultProfile = {
-          uid: user.uid,
-          name: name,
-          email: user.email,
-          specialization: 'General Physician',
-          bio: 'Dedicated to providing the best patient care.',
-          consultationTimings: 'Mon - Fri, 9 AM - 5 PM',
-          availability: 'Available for teleconsultation',
-          license: 'Not Verified',
-          avatar: `https://picsum.photos/seed/${user.uid}/100/100`,
-        };
-        await setDoc(userDocRef, defaultProfile);
-      }
+      // Update the user's profile with their name in Firebase Auth
+      await updateProfile(user, {
+        displayName: name,
+      });
+      
+      // Create the doctor profile in Firestore
+      await createDoctorProfile(user, { name });
 
       toast({
         title: 'Account Created',
