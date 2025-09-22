@@ -1,3 +1,7 @@
+
+'use client';
+
+import { useAuth } from '@/hooks/useAuth';
 import {
   Activity,
   ArrowUpRight,
@@ -30,15 +34,26 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { doctor, appointments } from '@/lib/data';
+import { appointments } from '@/lib/data';
 import Link from 'next/link';
 import ConsultationTrendsChart from '@/components/consultation-trends-chart';
+import { Loader2 } from 'lucide-react';
 
 export default function Dashboard() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-bold font-headline">
-        Welcome back, Dr. {doctor.name}
+        Welcome back, {user?.displayName || 'Doctor'}
       </h1>
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
