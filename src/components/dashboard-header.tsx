@@ -27,7 +27,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import Image from 'next/image';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth.tsx';
 import { getNotificationsForDoctor, type Notification } from '@/services/notificationService';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -65,7 +65,7 @@ export default function DashboardHeader() {
               className="flex items-center gap-2 text-lg font-semibold"
             >
               <Stethoscope className="h-6 w-6 text-primary" />
-              <span className="sr-only">ArogyaDoc</span>
+              <span className="sr-only">Medico-Doc</span>
             </Link>
             <Link
               href="/dashboard"

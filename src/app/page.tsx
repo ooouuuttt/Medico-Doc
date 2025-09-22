@@ -57,7 +57,7 @@ export default function LoginPage() {
           <div className="flex justify-center items-center mb-4">
             <Stethoscope className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-headline">ArogyaDoc</CardTitle>
+          <CardTitle className="text-2xl font-headline">Medico-Doc</CardTitle>
           <CardDescription>
             Enter your credentials to access your dashboard
           </CardDescription>

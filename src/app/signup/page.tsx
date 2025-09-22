@@ -61,7 +61,7 @@ export default function SignUpPage() {
           </div>
           <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
           <CardDescription>
-            Enter your details below to create your account
+            Enter your details below to create your account for Medico-Doc
           </CardDescription>
         </CardHeader>
         <CardContent>

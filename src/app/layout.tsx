@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/hooks/useAuth.tsx';
 
 export const metadata: Metadata = {
-  title: 'ArogyaDoc',
+  title: 'Medico-Doc',
   description: 'A dedicated platform for medical professionals.',
 };
 
