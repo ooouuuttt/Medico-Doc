@@ -33,3 +33,12 @@ export type Doctor = {
   specialization: string;
   avatar: string;
 };
+
+export type Notification = {
+    id: string;
+    doctorId: string;
+    title: string;
+    message: string;
+    createdAt: Date;
+    read: boolean;
+};
