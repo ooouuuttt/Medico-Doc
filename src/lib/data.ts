@@ -1,5 +1,5 @@
 
-import type { Patient, Appointment, Doctor, Message } from './types';
+import type { Patient, Appointment, Doctor, Message, PastPrescription } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 export type { Message };
@@ -9,6 +9,18 @@ export const doctor: Doctor = {
   specialization: 'Cardiologist',
   avatar: PlaceHolderImages.find(img => img.id === '1')?.imageUrl || '',
 };
+
+const pastPrescriptions: PastPrescription[] = [
+    {
+        id: 'presc1',
+        date: '2023-08-10',
+        medications: [
+            { name: 'Amlodipine', dosage: '5mg', frequency: 'Once a day' },
+            { name: 'Atorvastatin', dosage: '20mg', frequency: 'Once a day at night' },
+        ],
+        notes: 'Follow up in 2 months. Monitor blood pressure weekly.'
+    }
+];
 
 export const patients: Patient[] = [
   {
@@ -24,6 +36,17 @@ export const patients: Patient[] = [
       { id: '2', sender: 'doctor', text: 'Good morning, Rohan. Please describe the discomfort. Is it sharp or dull?', timestamp: '10:32 AM' },
       { id: '3', sender: 'patient', text: 'It\'s a dull ache, mostly when I walk up the stairs.', timestamp: '10:35 AM' },
     ],
+    vitals: {
+        bloodPressure: '140/90 mmHg',
+        heartRate: '85 bpm',
+        temperature: '98.6°F',
+        respiratoryRate: '18 breaths/min'
+    },
+    labReports: [
+        { id: 'lab1', title: 'Lipid Panel', date: '2023-10-05', url: '#' },
+        { id: 'lab2', title: 'EKG Report', date: '2023-10-05', url: '#' },
+    ],
+    pastPrescriptions: pastPrescriptions,
   },
   {
     id: '2',
@@ -39,6 +62,16 @@ export const patients: Patient[] = [
         { id: '3', sender: 'patient', text: 'The cough is still there, especially at night. The medicine helps a bit.', timestamp: '9:00 AM' },
         { id: '4', sender: 'doctor', text: 'Okay, let\'s monitor it for another two days. If it doesn\'t improve, we may need to try a different approach.', timestamp: '9:05 AM' },
     ],
+    vitals: {
+        bloodPressure: '120/80 mmHg',
+        heartRate: '72 bpm',
+        temperature: '98.4°F',
+        respiratoryRate: '16 breaths/min'
+    },
+    labReports: [
+        { id: 'lab3', title: 'Chest X-Ray', date: '2023-10-28', url: '#' },
+    ],
+    pastPrescriptions: [],
   },
   {
     id: '3',
@@ -51,6 +84,12 @@ export const patients: Patient[] = [
     messages: [
         { id: '1', sender: 'patient', text: 'Doctor, I\'ve been checking my sugar levels and they are high.', timestamp: '2 days ago' },
     ],
+    vitals: {
+        bloodPressure: '130/85 mmHg',
+        heartRate: '80 bpm',
+        temperature: '98.7°F',
+        respiratoryRate: '18 breaths/min'
+    },
   },
   {
     id: '4',

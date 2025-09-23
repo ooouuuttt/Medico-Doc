@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { File, ListFilter, MoreHorizontal, Loader2 } from 'lucide-react';
+import { File, ListFilter, MoreHorizontal, Loader2, Video } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth.tsx';
 import { getAppointmentsForDoctor } from '@/services/appointmentService';
 
@@ -37,6 +37,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { Appointment } from '@/lib/types';
+import Link from 'next/link';
 
 export default function AppointmentsPage() {
   const { user } = useAuth();
@@ -105,24 +106,13 @@ export default function AppointmentsPage() {
           </TableCell>
           <TableCell>{appointment.time} <br/> <span className="text-xs text-muted-foreground">{appointment.date}</span></TableCell>
           <TableCell>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  aria-haspopup="true"
-                  size="icon"
-                  variant="ghost"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                  <span className="sr-only">Toggle menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>Start Consultation</DropdownMenuItem>
-                <DropdownMenuItem>Reschedule</DropdownMenuItem>
-                <DropdownMenuItem>Cancel</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+             {appointment.status === 'upcoming' && (
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/dashboard/consultation/${appointment.id}`}>
+                  <Video className="mr-2 h-4 w-4" /> Join
+                </Link>
+              </Button>
+            )}
           </TableCell>
         </TableRow>
       ))}
@@ -197,7 +187,7 @@ export default function AppointmentsPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Time & Date</TableHead>
                   <TableHead>
-                    <span className="sr-only">Actions</span>
+                    Actions
                   </TableHead>
                 </TableRow>
               </TableHeader>

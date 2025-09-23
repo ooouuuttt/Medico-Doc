@@ -6,6 +6,27 @@ export type Message = {
   timestamp: string;
 };
 
+export type Vitals = {
+  bloodPressure: string;
+  heartRate: string;
+  temperature: string;
+  respiratoryRate: string;
+};
+
+export type LabReport = {
+  id: string;
+  title: string;
+  date: string;
+  url: string; // Link to the report PDF/image
+};
+
+export type PastPrescription = {
+    id: string;
+    date: string;
+    medications: { name: string; dosage: string; frequency: string }[];
+    notes: string;
+};
+
 export type Patient = {
   id: string;
   name: string;
@@ -15,6 +36,9 @@ export type Patient = {
   avatar: string;
   healthRecords: string;
   messages?: Message[];
+  vitals?: Vitals;
+  labReports?: LabReport[];
+  pastPrescriptions?: PastPrescription[];
 };
 
 export type Appointment = {

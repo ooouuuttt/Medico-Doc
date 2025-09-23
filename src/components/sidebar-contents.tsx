@@ -23,6 +23,7 @@ const menuItems = [
   { href: '/dashboard/appointments', label: 'Appointments', icon: CalendarDays },
   { href: '/dashboard/patients', label: 'Patients', icon: Users },
   { href: '/dashboard/messages', label: 'Messages', icon: MessageSquare, badge: 3 },
+  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
   { href: '/dashboard/profile', label: 'Profile', icon: User },
 ];
 
