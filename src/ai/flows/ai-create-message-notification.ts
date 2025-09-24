@@ -3,22 +3,15 @@
  * @fileOverview A flow to create a notification when a new message is received.
  *
  * - createMessageNotification - Creates a notification document in Firestore for a new message.
- * - CreateMessageNotificationInput - The input type for the function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import {db} from '@/lib/firebase';
 import {collection, addDoc, serverTimestamp} from 'firebase/firestore';
+import type { CreateMessageNotificationInput } from '@/ai/schemas';
+import { CreateMessageNotificationInputSchema } from '@/ai/schemas';
 
-export const CreateMessageNotificationInputSchema = z.object({
-  doctorId: z.string().describe('The UID of the doctor to be notified.'),
-  patientName: z.string().describe('The name of the patient who sent the message.'),
-  messageText: z.string().describe('A short snippet of the message text.'),
-});
-export type CreateMessageNotificationInput = z.infer<
-  typeof CreateMessageNotificationInputSchema
->;
 
 export async function createMessageNotification(
   input: CreateMessageNotificationInput

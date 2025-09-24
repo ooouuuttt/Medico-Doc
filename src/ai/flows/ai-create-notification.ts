@@ -3,22 +3,15 @@
  * @fileOverview A flow to create a notification when an appointment is booked.
  *
  * - createNotification - Creates a notification document in Firestore.
- * - CreateNotificationInput - The input type for the createNotification function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import {db} from '@/lib/firebase';
 import {collection, addDoc, serverTimestamp} from 'firebase/firestore';
+import type { CreateNotificationInput } from '@/ai/schemas';
+import { CreateNotificationInputSchema } from '@/ai/schemas';
 
-export const CreateNotificationInputSchema = z.object({
-  doctorId: z.string().describe('The UID of the doctor to be notified.'),
-  patientName: z.string().describe('The name of the patient who booked the appointment.'),
-  appointmentDate: z.string().describe('The date and time of the appointment.'),
-});
-export type CreateNotificationInput = z.infer<
-  typeof CreateNotificationInputSchema
->;
 
 export async function createNotification(
   input: CreateNotificationInput

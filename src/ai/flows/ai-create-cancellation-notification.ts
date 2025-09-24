@@ -3,23 +3,14 @@
  * @fileOverview A flow to create a notification when an appointment is cancelled.
  *
  * - createCancellationNotification - Creates a notification document in Firestore for a cancelled appointment.
- * - CreateCancellationNotificationInput - The input type for the function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import {db} from '@/lib/firebase';
 import {collection, addDoc, serverTimestamp} from 'firebase/firestore';
-
-export const CreateCancellationNotificationInputSchema = z.object({
-  doctorId: z.string().describe('The UID of the doctor to be notified.'),
-  patientName: z.string().describe('The name of the patient whose appointment was cancelled.'),
-  appointmentDate: z.string().describe('The original date and time of the appointment.'),
-  cancellationReason: z.string().describe('The reason for the cancellation.'),
-});
-export type CreateCancellationNotificationInput = z.infer<
-  typeof CreateCancellationNotificationInputSchema
->;
+import type { CreateCancellationNotificationInput } from '@/ai/schemas';
+import { CreateCancellationNotificationInputSchema } from '@/ai/schemas';
 
 export async function createCancellationNotification(
   input: CreateCancellationNotificationInput
