@@ -29,18 +29,24 @@ export async function getAppointmentsForDoctor(doctorId: string): Promise<Appoin
     const appointments = querySnapshot.docs.map((doc) => {
       const data = doc.data();
       // Convert the Firestore Timestamp to a JavaScript Date object.
-      const date = (data.date as Timestamp).toDate();
+      const utcDate = (data.date as Timestamp).toDate();
       
+      // Manually add 5 hours and 30 minutes for IST conversion
+      utcDate.setHours(utcDate.getHours() + 5);
+      utcDate.setMinutes(utcDate.getMinutes() + 30);
+
+      const correctedDate = utcDate;
+
       return {
         id: doc.id,
         patientId: data.patientId,
         patientName: data.patientName,
         // TODO: Fetch patient avatar from the 'users' collection based on patientId
         patientAvatar: `https://picsum.photos/seed/${data.patientId}/100/100`, 
-        time: date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
-        date: date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-        type: data.type,
-        status: data.status,
+        time: correctedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        date: correctedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        type: data.type as 'video' | 'chat',
+        status: data.status as 'upcoming' | 'completed' | 'cancelled',
       } as Appointment;
     });
 
