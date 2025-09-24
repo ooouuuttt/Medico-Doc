@@ -31,11 +31,13 @@ export async function getConversationsForDoctor(doctorId: string): Promise<Conve
 
     return querySnapshot.docs.map((docSnap) => {
       const data = docSnap.data();
+      const lastMessageTimestamp = data.lastMessageTimestamp as Timestamp | undefined;
+      
       return {
         id: docSnap.id,
         ...data,
         patientAvatar: `https://picsum.photos/seed/${data.patientId}/100/100`,
-        lastMessageTimestamp: (data.lastMessageTimestamp as Timestamp).toDate(),
+        lastMessageTimestamp: lastMessageTimestamp ? lastMessageTimestamp.toDate() : new Date(),
       } as Conversation;
     });
   } catch (error) {
