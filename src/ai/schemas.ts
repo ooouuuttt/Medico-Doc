@@ -34,3 +34,12 @@ export const CreateMessageNotificationInputSchema = z.object({
 export type CreateMessageNotificationInput = z.infer<
   typeof CreateMessageNotificationInputSchema
 >;
+
+// Schema for creating a new prescription notification
+export const CreatePrescriptionNotificationInputSchema = z.object({
+  doctorId: z.string().describe('The UID of the doctor to be notified.'),
+  patientName: z.string().describe('The name of the patient for whom the prescription was created.'),
+});
+export type CreatePrescriptionNotificationInput = z.infer<
+  typeof CreatePrescriptionNotificationInputSchema
+>;

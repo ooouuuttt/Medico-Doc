@@ -4,6 +4,7 @@
 import { generatePrescription, type GeneratePrescriptionOutput } from '@/ai/flows/ai-generate-prescription';
 import { summarizePatientSymptoms } from '@/ai/flows/ai-summarize-patient-symptoms';
 import { savePrescription as savePrescriptionToDb } from '@/services/prescriptionService';
+import { createPrescriptionNotification } from '@/ai/flows/ai-create-prescription-notification';
 import { z } from 'zod';
 
 const generateSchema = z.object({
@@ -122,6 +123,12 @@ export async function savePrescription(prevState: PrescriptionSaveState, formDat
     });
     
     if (result.success && result.prescriptionId) {
+        // Send notification after successful save
+        await createPrescriptionNotification({
+            doctorId: doctorId,
+            patientName: patientName,
+        });
+
         return {
           message: 'Prescription saved successfully.',
           success: true,
