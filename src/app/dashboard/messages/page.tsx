@@ -1,70 +1,83 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { type Message } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { SendHorizonal, Search, Loader2 } from 'lucide-react';
-import type { Patient } from '@/lib/types';
-import { db } from '@/lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
-
-async function getAllPatients(): Promise<Patient[]> {
-    const patientsCol = collection(db, 'users');
-    const patientSnapshot = await getDocs(patientsCol);
-    const patientList = patientSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Patient));
-    return patientList;
-}
-
+import { useAuth } from '@/hooks/useAuth';
+import type { Conversation, Message } from '@/services/chatService';
+import { getConversationsForDoctor, listenToMessages, sendMessage } from '@/services/chatService';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function MessagesPage() {
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const { user } = useAuth();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isMessagesLoading, setIsMessagesLoading] = useState(false);
   const [newMessage, setNewMessage] = useState('');
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    async function fetchPatients() {
+    async function fetchConversations() {
+      if (user) {
         setIsLoading(true);
-        const fetchedPatients = await getAllPatients();
-        setPatients(fetchedPatients);
-        if (fetchedPatients.length > 0) {
-            setSelectedPatient(fetchedPatients[0]);
-            setMessages(fetchedPatients[0].messages || []);
+        const fetchedConversations = await getConversationsForDoctor(user.uid);
+        setConversations(fetchedConversations);
+        if (fetchedConversations.length > 0) {
+          handleSelectConversation(fetchedConversations[0]);
         }
         setIsLoading(false);
+      }
     }
-    fetchPatients();
-  }, []);
+    fetchConversations();
+  }, [user]);
 
-  const handleSelectPatient = (patient: Patient) => {
-    setSelectedPatient(patient);
-    // In a real app, you would fetch messages for this patient from a 'chats' collection
-    setMessages(patient.messages || []);
+  useEffect(() => {
+    if (selectedConversation?.id) {
+      setIsMessagesLoading(true);
+      const unsubscribe = listenToMessages(selectedConversation.id, (newMessages) => {
+        setMessages(newMessages);
+        setIsMessagesLoading(false);
+        // Scroll to bottom after messages load
+        setTimeout(() => {
+            if (scrollAreaRef.current) {
+                const viewport = scrollAreaRef.current.querySelector('div');
+                if (viewport) viewport.scrollTop = viewport.scrollHeight;
+            }
+        }, 100);
+      });
+      
+      // Cleanup listener on component unmount or when conversation changes
+      return () => unsubscribe();
+    }
+  }, [selectedConversation]);
+
+
+  const handleSelectConversation = (conversation: Conversation) => {
+    setSelectedConversation(conversation);
+    setMessages([]); // Clear previous messages
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newMessage.trim() === '' || !selectedPatient) return;
+    if (newMessage.trim() === '' || !selectedConversation || !user) return;
 
-    const message: Message = {
-      id: (messages.length + 1).toString(),
-      sender: 'doctor',
+    const messageToSend = {
       text: newMessage.trim(),
-      timestamp: 'Just now',
+      senderId: user.uid,
     };
-
-    setMessages([...messages, message]);
+    
     setNewMessage('');
-    // In a real app, you would save this message to Firestore
+    await sendMessage(selectedConversation.id, messageToSend);
   };
-
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-100px)]">
       <Card className="md:col-span-1 flex flex-col">
@@ -86,25 +99,30 @@ export default function MessagesPage() {
                 </div>
             ) : (
                 <div className="flex flex-col">
-                {patients.map((patient) => (
+                {conversations.map((convo) => (
                     <button
-                    key={patient.id}
-                    onClick={() => handleSelectPatient(patient)}
+                    key={convo.id}
+                    onClick={() => handleSelectConversation(convo)}
                     className={cn(
                         'flex items-center gap-3 p-4 text-left hover:bg-muted/50 transition-colors w-full border-b',
-                        selectedPatient?.id === patient.id && 'bg-muted'
+                        selectedConversation?.id === convo.id && 'bg-muted'
                     )}
                     >
                     <Avatar className="h-10 w-10">
-                        <AvatarImage src={patient.avatar} alt={patient.name} data-ai-hint="person portrait"/>
-                        <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={convo.patientAvatar} alt={convo.patientName} data-ai-hint="person portrait"/>
+                        <AvatarFallback>{convo.patientName.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <div className="flex-grow">
-                        <p className="font-semibold">{patient.name}</p>
+                    <div className="flex-grow overflow-hidden">
+                        <p className="font-semibold">{convo.patientName}</p>
                         <p className="text-sm text-muted-foreground truncate">
-                        {patient.messages?.[patient.messages.length - 1]?.text || 'No messages yet'}
+                            {convo.lastMessageText || 'No messages yet'}
                         </p>
                     </div>
+                     {convo.lastMessageTimestamp && (
+                        <p className="text-xs text-muted-foreground self-start">
+                            {formatDistanceToNow(convo.lastMessageTimestamp, { addSuffix: true })}
+                        </p>
+                    )}
                     </button>
                 ))}
                 </div>
@@ -114,44 +132,52 @@ export default function MessagesPage() {
       </Card>
 
       <Card className="md:col-span-2 flex flex-col h-full">
-        {selectedPatient ? (
+        {selectedConversation ? (
           <>
             <CardHeader className="flex flex-row items-center gap-3 border-b">
               <Avatar>
-                <AvatarImage src={selectedPatient.avatar} alt={selectedPatient.name} data-ai-hint="person portrait"/>
-                <AvatarFallback>{selectedPatient.name.charAt(0)}</AvatarFallback>
+                <AvatarImage src={selectedConversation.patientAvatar} alt={selectedConversation.patientName} data-ai-hint="person portrait"/>
+                <AvatarFallback>{selectedConversation.patientName.charAt(0)}</AvatarFallback>
               </Avatar>
-              <CardTitle className="m-0">{selectedPatient.name}</CardTitle>
+              <CardTitle className="m-0">{selectedConversation.patientName}</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 p-0 overflow-y-auto">
-                <ScrollArea className="h-full p-6">
-                    <div className="flex flex-col gap-4">
-                        {messages.length > 0 ? messages.map((message) => (
-                        <div
-                            key={message.id}
-                            className={cn(
-                            'flex items-end gap-2 max-w-xs',
-                            message.sender === 'doctor' ? 'ml-auto flex-row-reverse' : 'mr-auto'
-                            )}
-                        >
-                            <div
-                            className={cn(
-                                'rounded-lg px-4 py-2',
-                                message.sender === 'doctor'
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted'
-                            )}
-                            >
-                            <p>{message.text}</p>
-                            <p className="text-xs text-right opacity-70 mt-1">{message.timestamp}</p>
-                            </div>
+                <ScrollArea className="h-full p-6" ref={scrollAreaRef}>
+                     {isMessagesLoading ? (
+                        <div className="flex justify-center items-center h-full">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary"/>
                         </div>
-                        )) : (
-                            <div className="text-center text-muted-foreground pt-10">
-                                No messages in this conversation yet.
+                     ) : (
+                        <div className="flex flex-col gap-4">
+                            {messages.length > 0 ? messages.map((message) => (
+                            <div
+                                key={message.id}
+                                className={cn(
+                                'flex items-end gap-2 max-w-xs',
+                                message.senderId === user?.uid ? 'ml-auto flex-row-reverse' : 'mr-auto'
+                                )}
+                            >
+                                <div
+                                className={cn(
+                                    'rounded-lg px-4 py-2',
+                                    message.senderId === user?.uid
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted'
+                                )}
+                                >
+                                <p>{message.text}</p>
+                                <p className="text-xs text-right opacity-70 mt-1">
+                                    {message.timestamp ? formatDistanceToNow(message.timestamp, { addSuffix: true }) : 'Sending...'}
+                                </p>
+                                </div>
                             </div>
-                        )}
-                    </div>
+                            )) : (
+                                <div className="text-center text-muted-foreground pt-10">
+                                    No messages in this conversation yet.
+                                </div>
+                            )}
+                        </div>
+                     )}
                 </ScrollArea>
             </CardContent>
             <div className="p-4 border-t">
@@ -162,7 +188,7 @@ export default function MessagesPage() {
                   placeholder="Type your message..."
                   autoComplete="off"
                 />
-                <Button type="submit" size="icon">
+                <Button type="submit" size="icon" disabled={!newMessage.trim()}>
                   <SendHorizonal className="h-4 w-4" />
                 </Button>
               </form>
