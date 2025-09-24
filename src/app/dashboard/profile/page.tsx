@@ -8,12 +8,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Pencil, Loader2 } from 'lucide-react';
+import { Pencil, Loader2, DollarSign } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth.tsx';
 import { useToast } from '@/hooks/use-toast';
 import { getDoctorProfile, updateUserProfile, type UserProfile } from '@/services/doctorService';
 import { updateProfile } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { Checkbox } from '@/components/ui/checkbox';
+
+const defaultAvailability = {
+  monday: '09:00-17:00',
+  tuesday: '09:00-17:00',
+  wednesday: '09:00-17:00',
+  thursday: '09:00-17:00',
+  friday: '09:00-17:00',
+  saturday: '',
+  sunday: '',
+};
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -31,20 +42,8 @@ export default function ProfilePage() {
         if (userProfile) {
           setProfile(userProfile);
         } else {
-          // If profile doesn't exist, create one with default values
-           const defaultProfile: UserProfile = {
-            uid: user.uid,
-            name: user.displayName || 'Dr. User',
-            email: user.email || '',
-            specialization: 'General Physician',
-            bio: 'Dedicated to providing the best patient care.',
-            consultationTimings: 'Mon - Fri, 9 AM - 5 PM',
-            availability: 'Available for teleconsultation',
-            license: 'Not Verified',
-            avatar: user.photoURL || "https://images.unsplash.com/photo-1582750433449-648ed127bb54?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxkb2N0b3J8ZW58MHx8fHwxNzU4NTQ5NjU0fDA&ixlib=rb-4.1.0&q=80&w=1080",
-          };
-          await updateUserProfile(user.uid, defaultProfile);
-          setProfile(defaultProfile);
+           const defaultProfile = await createDoctorProfile(user, { name: user.displayName || 'Dr. User' });
+           setProfile(defaultProfile);
         }
         setIsLoading(false);
       }
@@ -52,7 +51,7 @@ export default function ProfilePage() {
 
     fetchProfile();
   }, [user]);
-
+  
   const handleEditClick = () => {
     setIsEditing(true);
   };
@@ -63,10 +62,8 @@ export default function ProfilePage() {
     
     setIsLoading(true);
     try {
-      // Update Firestore
       await updateUserProfile(user.uid, profile);
 
-      // Update Firebase Auth displayName if it has changed
       if (auth.currentUser && auth.currentUser.displayName !== profile.name) {
         await updateProfile(auth.currentUser, { displayName: profile.name });
       }
@@ -94,6 +91,29 @@ export default function ProfilePage() {
       setProfile(prev => ({...prev!, [id]: value}));
     }
   }
+  
+  const handleFeeChange = (type: 'video' | 'audio' | 'chat', value: string) => {
+    if (profile) {
+      setProfile(prev => ({
+        ...prev!,
+        consultationFee: {
+          ...prev!.consultationFee,
+          [type]: Number(value) || 0,
+        }
+      }))
+    }
+  }
+
+  const handleConsultationTypeChange = (type: 'video' | 'audio' | 'chat', checked: boolean) => {
+    if (profile) {
+        const currentTypes = profile.consultationTypes || [];
+        const newTypes = checked
+            ? [...currentTypes, type]
+            : currentTypes.filter(t => t !== type);
+        setProfile(prev => ({ ...prev!, consultationTypes: newTypes }));
+    }
+  };
+
 
   if (isLoading || !profile) {
     return (
@@ -120,7 +140,7 @@ export default function ProfilePage() {
           )}
         </CardHeader>
         <CardContent>
-          <form className="grid gap-6" onSubmit={handleSaveClick}>
+          <form className="grid gap-8" onSubmit={handleSaveClick}>
             <div className="flex items-center gap-4">
               <Avatar className="h-20 w-20">
                 <AvatarImage src={profile.avatar} alt={`Dr. ${profile.name}`} data-ai-hint="doctor portrait" />
@@ -128,6 +148,7 @@ export default function ProfilePage() {
               </Avatar>
               <Button variant="outline" disabled={!isEditing}>Change Photo</Button>
             </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Full Name</Label>
@@ -138,25 +159,69 @@ export default function ProfilePage() {
                 <Input id="specialization" value={profile.specialization} onChange={handleInputChange} disabled={!isEditing} />
               </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={profile.email} onChange={handleInputChange} disabled={true} />
+            
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" value={profile.email} onChange={handleInputChange} disabled={true} />
+                </div>
+                 <div className="grid gap-2">
+                    <Label htmlFor="experience">Years of Experience</Label>
+                    <Input id="experience" type="number" value={profile.experience} onChange={handleInputChange} disabled={!isEditing} />
+                </div>
             </div>
+
             <div className="grid gap-2">
               <Label htmlFor="bio">About Me</Label>
               <Textarea id="bio" placeholder="Tell us a little bit about yourself" value={profile.bio} onChange={handleInputChange} disabled={!isEditing} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="consultationTimings">Consultation Timings</Label>
-                <Input id="consultationTimings" value={profile.consultationTimings} onChange={handleInputChange} disabled={!isEditing} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="availability">Availability</Label>
-                <Input id="availability" value={profile.availability} onChange={handleInputChange} disabled={!isEditing} />
-              </div>
+
+            <div className="grid gap-4">
+                <Label className="font-semibold">Consultation Types</Label>
+                <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="video" checked={profile.consultationTypes.includes('video')} onCheckedChange={(checked) => handleConsultationTypeChange('video', !!checked)} disabled={!isEditing}/>
+                        <Label htmlFor="video">Video</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="audio" checked={profile.consultationTypes.includes('audio')} onCheckedChange={(checked) => handleConsultationTypeChange('audio', !!checked)} disabled={!isEditing}/>
+                        <Label htmlFor="audio">Audio</Label>
+                    </div>
+                     <div className="flex items-center space-x-2">
+                        <Checkbox id="chat" checked={profile.consultationTypes.includes('chat')} onCheckedChange={(checked) => handleConsultationTypeChange('chat', !!checked)} disabled={!isEditing}/>
+                        <Label htmlFor="chat">Chat</Label>
+                    </div>
+                </div>
             </div>
-            <div className="grid gap-2">
+
+            <div className="grid gap-4">
+                <Label className="font-semibold">Consultation Fees (INR)</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="fee-video">Video</Label>
+                        <div className="relative">
+                            <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/>
+                            <Input id="fee-video" type="number" value={profile.consultationFee.video} onChange={(e) => handleFeeChange('video', e.target.value)} disabled={!isEditing} className="pl-8"/>
+                        </div>
+                    </div>
+                     <div className="grid gap-2">
+                        <Label htmlFor="fee-audio">Audio</Label>
+                        <div className="relative">
+                            <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/>
+                            <Input id="fee-audio" type="number" value={profile.consultationFee.audio} onChange={(e) => handleFeeChange('audio', e.target.value)} disabled={!isEditing} className="pl-8"/>
+                        </div>
+                    </div>
+                     <div className="grid gap-2">
+                        <Label htmlFor="fee-chat">Chat</Label>
+                         <div className="relative">
+                            <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/>
+                            <Input id="fee-chat" type="number" value={profile.consultationFee.chat} onChange={(e) => handleFeeChange('chat', e.target.value)} disabled={!isEditing} className="pl-8"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+             <div className="grid gap-2">
               <Label htmlFor="license">Medical License</Label>
               <Input id="license" value={profile.license} disabled={!isEditing} onChange={handleInputChange} />
             </div>
