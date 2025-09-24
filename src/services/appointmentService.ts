@@ -31,13 +31,21 @@ export async function getAppointmentsForDoctor(doctorId: string): Promise<Appoin
       // Convert the Firestore Timestamp to a JavaScript Date object.
       const date = (data.date as Timestamp).toDate();
       
+      // Manually format time to avoid timezone issues
+      const hours = date.getUTCHours();
+      const minutes = date.getUTCMinutes();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
+      const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+      const formattedTime = `${formattedHours}:${formattedMinutes} ${ampm}`;
+
       return {
         id: doc.id,
         patientId: data.patientId,
         patientName: data.patientName,
         // TODO: Fetch patient avatar from the 'users' collection based on patientId
         patientAvatar: `https://picsum.photos/seed/${data.patientId}/100/100`, 
-        time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        time: formattedTime,
         date: date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         type: data.type,
         status: data.status,
