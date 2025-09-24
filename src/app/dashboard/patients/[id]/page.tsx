@@ -173,7 +173,7 @@ export default function PatientDetailPage() {
                     onHealthRecordsChange={setHealthRecords}
                 />
                 <div className="mt-6">
-                    <PrescriptionGenerator healthRecords={healthRecords} />
+                    <PrescriptionGenerator healthRecords={healthRecords} patientName={patient.name} />
                 </div>
             </TabsContent>
             <TabsContent value="records" className="mt-4 space-y-6">

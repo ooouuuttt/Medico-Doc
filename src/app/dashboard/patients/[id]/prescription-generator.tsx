@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useActionState, useEffect, useRef, useState, useTransition } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
-import { createPrescription, type PrescriptionFormState } from './prescription-actions';
+import { createPrescription, savePrescription, type PrescriptionGenerationState, type PrescriptionSaveState } from './prescription-actions';
 import type { GeneratePrescriptionOutput } from '@/ai/flows/ai-generate-prescription';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,17 +22,19 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 
-import { FileText, Loader2, Sparkles, PlusCircle, Trash2, Save, XCircle, Printer } from 'lucide-react';
+import { FileText, Loader2, Sparkles, PlusCircle, Trash2, Save, XCircle, Printer, Send } from 'lucide-react';
+import { useParams } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
-const initialState: PrescriptionFormState = {
+const initialGenerationState: PrescriptionGenerationState = {
   message: '',
 };
 
-type Medication = {
-  name: string;
-  dosage: string;
-  frequency: string;
+const initialSaveState: PrescriptionSaveState = {
+  message: '',
+  success: false,
 };
+
 
 function AIGenerateButton() {
   const { pending } = useFormStatus();
@@ -51,10 +53,24 @@ function AIGenerateButton() {
   );
 }
 
-export default function PrescriptionGenerator({ healthRecords }: { healthRecords: string }) {
-  const [state, formAction] = useActionState(createPrescription, initialState);
+function SaveButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4"/>}
+            Confirm & Send
+        </Button>
+    )
+}
+
+export default function PrescriptionGenerator({ healthRecords, patientName }: { healthRecords: string, patientName: string }) {
+  const params = useParams();
+  const patientId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const { user } = useAuth();
+  
+  const [generationState, generationFormAction] = useActionState(createPrescription, initialGenerationState);
+  const [saveState, saveFormAction] = useActionState(savePrescription, initialSaveState);
   const { toast } = useToast();
-  const formRef = useRef<HTMLFormElement>(null);
   
   const [prescription, setPrescription] = useState<GeneratePrescriptionOutput>({
     medications: [],
@@ -64,24 +80,44 @@ export default function PrescriptionGenerator({ healthRecords }: { healthRecords
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
+  // Effect for AI generation state
   useEffect(() => {
-    if (state.message && state.message !== 'success') {
+    if (generationState.message && generationState.message !== 'success') {
       toast({
         variant: 'destructive',
         title: 'Error Generating Prescription',
-        description: state.message,
+        description: generationState.message,
       });
     }
-    if (state.message === 'success' && state.prescription) {
-        setPrescription(state.prescription);
+    if (generationState.message === 'success' && generationState.prescription) {
+        setPrescription(generationState.prescription);
         toast({
             title: 'AI Prescription Generated',
-            description: 'The prescription has been populated with AI suggestions. Please review and edit as needed.',
+            description: 'The prescription has been populated. Please review and edit as needed.',
         });
     }
-  }, [state, toast]);
+  }, [generationState, toast]);
 
-  const handleMedicationChange = (index: number, field: keyof Medication, value: string) => {
+  // Effect for save prescription state
+  useEffect(() => {
+    if (saveState.message && !saveState.success) {
+      toast({
+        variant: 'destructive',
+        title: 'Error Sending Prescription',
+        description: saveState.message,
+      });
+    }
+    if (saveState.success) {
+      setIsPreviewOpen(false);
+      toast({
+        title: 'Prescription Sent',
+        description: 'The prescription has been successfully saved and sent to the patient.',
+      });
+    }
+  }, [saveState, toast]);
+
+
+  const handleMedicationChange = (index: number, field: keyof GeneratePrescriptionOutput['medications'][0], value: string) => {
     const updatedMedications = [...prescription.medications];
     updatedMedications[index] = { ...updatedMedications[index], [field]: value };
     setPrescription({ ...prescription, medications: updatedMedications });
@@ -116,15 +152,6 @@ export default function PrescriptionGenerator({ healthRecords }: { healthRecords
     setIsPreviewOpen(true);
   };
 
-  const handleConfirmSave = () => {
-    // Implement actual save logic here, e.g., send to a database
-    setIsPreviewOpen(false);
-    toast({
-        title: 'Prescription Saved',
-        description: 'The prescription has been saved successfully.',
-    });
-  };
-
 
   const clearForm = () => {
     setPrescription({
@@ -147,7 +174,7 @@ export default function PrescriptionGenerator({ healthRecords }: { healthRecords
           Create a prescription manually or use AI to generate suggestions based on the health records.
         </p>
         
-        <form ref={formRef} action={formAction} className="mb-6">
+        <form action={generationFormAction} className="mb-6">
            <input type="hidden" name="healthRecords" value={healthRecords || ''} />
           <AIGenerateButton />
         </form>
@@ -195,7 +222,7 @@ export default function PrescriptionGenerator({ healthRecords }: { healthRecords
         </div>
 
         <div className="mt-6 flex gap-2">
-            <Button onClick={handleOpenPreview}><Save className="mr-2 h-4 w-4"/> Save Prescription</Button>
+            <Button onClick={handleOpenPreview}><Save className="mr-2 h-4 w-4"/> Preview & Send</Button>
             <Button variant="outline" onClick={clearForm}><XCircle className="mr-2 h-4 w-4"/> Clear</Button>
         </div>
       </CardContent>
@@ -206,7 +233,7 @@ export default function PrescriptionGenerator({ healthRecords }: { healthRecords
             <DialogHeader>
                 <DialogTitle className="text-2xl font-headline">Prescription Preview</DialogTitle>
                 <DialogDescription>
-                    Please review the prescription details below before saving.
+                    Review the prescription, then send it to the patient.
                 </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto px-2">
@@ -238,17 +265,27 @@ export default function PrescriptionGenerator({ healthRecords }: { healthRecords
                 </div>
             </div>
             <DialogFooter className="sm:justify-between">
-                <div>
-                  <Button variant="outline"><Printer className="mr-2 h-4 w-4"/> Print</Button>
-                </div>
-                <div className="flex gap-2">
-                    <DialogClose asChild>
-                        <Button type="button" variant="secondary">
-                            Edit
-                        </Button>
-                    </DialogClose>
-                    <Button type="button" onClick={handleConfirmSave}>Confirm & Save</Button>
-                </div>
+                <form action={saveFormAction}>
+                    <input type="hidden" name="patientId" value={patientId} />
+                    <input type="hidden" name="patientName" value={patientName} />
+                    <input type="hidden" name="doctorId" value={user?.uid || ''} />
+                    <input type="hidden" name="doctorName" value={user?.displayName || ''} />
+                    <input type="hidden" name="prescriptionData" value={JSON.stringify(prescription)} />
+                    
+                    <div className="flex gap-2 w-full justify-between">
+                        <div>
+                          <Button variant="outline" type="button"><Printer className="mr-2 h-4 w-4"/> Print</Button>
+                        </div>
+                        <div className="flex gap-2">
+                            <DialogClose asChild>
+                                <Button type="button" variant="secondary">
+                                    Edit
+                                </Button>
+                            </DialogClose>
+                            <SaveButton />
+                        </div>
+                    </div>
+                </form>
             </DialogFooter>
         </DialogContent>
     </Dialog>
