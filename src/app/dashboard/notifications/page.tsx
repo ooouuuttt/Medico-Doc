@@ -3,7 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { listenToNotifications, markAllNotificationsAsRead, type Notification } from '@/services/notificationService';
+import { markAllNotificationsAsRead } from '@/services/notificationService';
+import type { Notification } from '@/lib/types';
+import { listenToNotifications } from '@/services/notificationListener';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BellRing, Loader2, MailCheck } from 'lucide-react';
