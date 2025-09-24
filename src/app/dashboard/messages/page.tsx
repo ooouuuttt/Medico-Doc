@@ -115,7 +115,7 @@ export default function MessagesPage() {
                     </Avatar>
                     <div className="flex-grow overflow-hidden">
                         <p className="font-semibold">{convo.patientName}</p>
-                        <p className="text-sm text-muted-foreground truncate">
+                        <p className="text-sm text-muted-foreground">
                             {convo.lastMessageText || 'No messages yet'}
                         </p>
                     </div>
