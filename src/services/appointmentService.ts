@@ -3,7 +3,7 @@
 
 import { db } from '@/lib/firebase';
 import type { Appointment } from '@/lib/types';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 
 /**
  * Fetches appointments for a specific doctor from Firestore.
@@ -28,9 +28,8 @@ export async function getAppointmentsForDoctor(doctorId: string): Promise<Appoin
 
     const appointments = querySnapshot.docs.map((doc) => {
       const data = doc.data();
-      // Correctly parse the date string from Firestore into a Date object.
-      // The original code was incorrectly trying to cast it as a Timestamp.
-      const date = new Date(data.date);
+      // Convert the Firestore Timestamp to a JavaScript Date object.
+      const date = (data.date as Timestamp).toDate();
       
       return {
         id: doc.id,
