@@ -3,33 +3,50 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { getNotificationsForDoctor, type Notification } from '@/services/notificationService';
+import { listenToNotifications, markAllNotificationsAsRead, type Notification } from '@/services/notificationService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BellRing, Loader2, MailCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 export default function NotificationsPage() {
     const { user } = useAuth();
+    const { toast } = useToast();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        async function fetchNotifications() {
-            if (user) {
-                setIsLoading(true);
-                const fetchedNotifications = await getNotificationsForDoctor(user.uid);
+        if (user) {
+            setIsLoading(true);
+            const unsubscribe = listenToNotifications(user.uid, (fetchedNotifications) => {
                 setNotifications(fetchedNotifications);
                 setIsLoading(false);
-            }
+            });
+
+            // Cleanup listener on component unmount
+            return () => unsubscribe();
         }
-        fetchNotifications();
     }, [user]);
     
-    const markAllAsRead = () => {
-        // In a real app, you would also update the read status in Firestore
-        setNotifications(notifications.map(n => ({ ...n, read: true })));
+    const handleMarkAllAsRead = async () => {
+        if (!user) return;
+
+        const result = await markAllNotificationsAsRead(user.uid);
+        if (result.success) {
+            setNotifications(notifications.map(n => ({ ...n, read: true })));
+            toast({
+                title: 'Success',
+                description: 'All notifications marked as read.',
+            });
+        } else {
+             toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: result.error || 'Could not mark notifications as read.',
+            });
+        }
     };
 
     return (
@@ -37,9 +54,9 @@ export default function NotificationsPage() {
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle>Notifications</CardTitle>
-                    <CardDescription>View all your recent alerts and updates.</CardDescription>
+                    <CardDescription>View all your recent alerts and updates in real-time.</CardDescription>
                 </div>
-                 <Button size="sm" variant="outline" onClick={markAllAsRead} disabled={notifications.every(n => n.read)}>
+                 <Button size="sm" variant="outline" onClick={handleMarkAllAsRead} disabled={notifications.every(n => n.read) || notifications.length === 0}>
                     <MailCheck className="mr-2 h-4 w-4"/> Mark all as read
                 </Button>
             </CardHeader>

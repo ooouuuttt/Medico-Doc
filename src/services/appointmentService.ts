@@ -3,7 +3,9 @@
 
 import { db } from '@/lib/firebase';
 import type { Appointment } from '@/lib/types';
-import { collection, query, where, getDocs, Timestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { createCancellationNotification } from '@/ai/flows/ai-create-cancellation-notification';
+
 
 /**
  * Fetches appointments for a specific doctor from Firestore.
@@ -79,11 +81,26 @@ export async function cancelAppointment(
 
   try {
     const appointmentDocRef = doc(db, 'appointments', appointmentId);
+    const appointmentSnap = await getDoc(appointmentDocRef);
+    if (!appointmentSnap.exists()) {
+        return { success: false, error: 'Appointment not found.' };
+    }
+    const appointmentData = appointmentSnap.data();
+
     await updateDoc(appointmentDocRef, {
       status: 'cancelled',
       cancellationReason: reason,
     });
     console.log('Appointment cancelled successfully:', appointmentId);
+    
+    // Send notification
+    await createCancellationNotification({
+        doctorId: appointmentData.doctorId,
+        patientName: appointmentData.patientName,
+        appointmentDate: (appointmentData.date as Timestamp).toDate().toISOString(),
+        cancellationReason: reason
+    });
+
     return { success: true };
   } catch (error) {
     console.error('Error cancelling appointment:', error);

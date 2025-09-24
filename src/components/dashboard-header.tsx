@@ -13,6 +13,7 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,26 +29,26 @@ import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth.tsx';
-import { getNotificationsForDoctor, type Notification } from '@/services/notificationService';
+import { listenToNotifications, type Notification } from '@/services/notificationService';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function DashboardHeader() {
   const { user } = useAuth();
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const unreadCount = notifications.filter(n => !n.read).length;
   
   const doctorAvatar = user?.photoURL || PlaceHolderImages.find(img => img.id === '1')?.imageUrl || '';
 
   useEffect(() => {
-    async function fetchNotifications() {
-      if (user) {
-        const fetchedNotifications = await getNotificationsForDoctor(user.uid);
-        setNotifications(fetchedNotifications);
-      }
+    if (user) {
+      const unsubscribe = listenToNotifications(user.uid, setNotifications);
+      return () => unsubscribe(); // Cleanup listener on component unmount
     }
-    fetchNotifications();
   }, [user]);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
   
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
@@ -114,10 +115,10 @@ export default function DashboardHeader() {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon" className="h-8 w-8 relative">
+          <Button variant="outline" size="icon" className="h-8 w-8 relative" onClick={() => router.push('/dashboard/notifications')}>
             <Bell className="h-4 w-4" />
             {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-xs text-white">
                     {unreadCount}
                 </span>
             )}
@@ -128,12 +129,13 @@ export default function DashboardHeader() {
           <DropdownMenuLabel>Notifications</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {notifications.length > 0 ? (
-            notifications.slice(0, 5).map(notification => (
-              <DropdownMenuItem key={notification.id} className="flex items-start gap-2">
-                 <div className="w-1 h-1 mt-2 rounded-full bg-primary" style={{ opacity: notification.read ? 0 : 1 }}/>
+            notifications.slice(0, 3).map(notification => (
+              <DropdownMenuItem key={notification.id} className="flex items-start gap-2" onClick={() => router.push('/dashboard/notifications')}>
+                 <div className="w-1.5 h-1.5 mt-1.5 rounded-full bg-primary" style={{ opacity: notification.read ? 0 : 1 }}/>
                  <div className="flex-1">
-                    <p className="text-sm font-medium">{notification.title}</p>
-                    <p className="text-xs text-muted-foreground">{notification.message}</p>
+                    <p className="text-sm font-medium leading-tight">{notification.title}</p>
+                    <p className="text-xs text-muted-foreground">{notification.message.substring(0, 50)}...</p>
+                    <p className="text-xs text-muted-foreground mt-1">{formatDistanceToNow(notification.createdAt, { addSuffix: true })}</p>
                  </div>
               </DropdownMenuItem>
             ))
@@ -142,6 +144,10 @@ export default function DashboardHeader() {
               No new notifications
             </div>
           )}
+           <DropdownMenuSeparator />
+           <DropdownMenuItem className="justify-center" asChild>
+              <Link href="/dashboard/notifications">View all notifications</Link>
+           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

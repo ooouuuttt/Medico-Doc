@@ -8,6 +8,7 @@ import {
   where,
   getDocs,
   doc,
+  getDoc,
   addDoc,
   updateDoc,
   orderBy,
@@ -15,6 +16,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import type { Conversation } from './chatService';
+import { createMessageNotification } from '@/ai/flows/ai-create-message-notification';
 
 /**
  * Fetches all chat conversations for a specific doctor.
@@ -62,6 +64,14 @@ export async function sendMessage(chatId: string, message: { text: string; sende
     return;
   }
   try {
+    const chatDocRef = doc(db, 'chats', chatId);
+    const chatDocSnap = await getDoc(chatDocRef);
+    if (!chatDocSnap.exists()) {
+        console.error('Chat document not found');
+        return;
+    }
+    const chatData = chatDocSnap.data();
+
     // 1. Add the new message to the 'messages' subcollection
     const messagesCol = collection(db, 'chats', chatId, 'messages');
     await addDoc(messagesCol, {
@@ -70,11 +80,20 @@ export async function sendMessage(chatId: string, message: { text: string; sende
     });
 
     // 2. Update the last message info in the parent chat document
-    const chatDocRef = doc(db, 'chats', chatId);
     await updateDoc(chatDocRef, {
       lastMessageText: message.text,
       lastMessageTimestamp: serverTimestamp(),
     });
+
+    // 3. Send notification if the sender is not the doctor
+    if (message.senderId !== chatData.doctorId) {
+        await createMessageNotification({
+            doctorId: chatData.doctorId,
+            patientName: chatData.patientName,
+            messageText: message.text,
+        });
+    }
+
   } catch (error) {
     console.error('Error sending message:', error);
   }
