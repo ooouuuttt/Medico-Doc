@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { File, ListFilter, MoreHorizontal, Loader2, Video, Trash2 } from 'lucide-react';
+import { File, ListFilter, MoreHorizontal, Loader2, Video, Trash2, Info } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth.tsx';
 import { getAppointmentsForDoctor, cancelAppointment } from '@/services/appointmentService';
 
@@ -49,6 +49,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 export default function AppointmentsPage() {
   const { user } = useAuth();
@@ -61,6 +64,7 @@ export default function AppointmentsPage() {
     chat: true,
   });
   const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null);
+  const [cancellationReason, setCancellationReason] = useState('');
 
   useEffect(() => {
     async function fetchAppointments() {
@@ -79,13 +83,20 @@ export default function AppointmentsPage() {
   };
   
   const handleCancelAppointment = async () => {
-    if (!appointmentToCancel) return;
+    if (!appointmentToCancel || !cancellationReason.trim()) {
+        toast({
+            variant: 'destructive',
+            title: 'Reason Required',
+            description: 'Please provide a reason for the cancellation.',
+        });
+        return;
+    }
 
-    const result = await cancelAppointment(appointmentToCancel.id);
+    const result = await cancelAppointment(appointmentToCancel.id, cancellationReason);
     if (result.success) {
       setAppointments(prev =>
         prev.map(app =>
-          app.id === appointmentToCancel.id ? { ...app, status: 'cancelled' } : app
+          app.id === appointmentToCancel.id ? { ...app, status: 'cancelled', cancellationReason } : app
         )
       );
       toast({
@@ -100,7 +111,13 @@ export default function AppointmentsPage() {
       });
     }
     setAppointmentToCancel(null);
+    setCancellationReason('');
   };
+  
+  const openCancelDialog = (appointment: Appointment) => {
+    setAppointmentToCancel(appointment);
+    setCancellationReason('');
+  }
 
   const filteredAppointments = appointments.filter(appointment => {
     const statusMatch = activeTab === 'all' || appointment.status.toLowerCase() === activeTab;
@@ -128,18 +145,32 @@ export default function AppointmentsPage() {
             <Badge variant="outline" className="capitalize">{appointment.type}</Badge>
           </TableCell>
           <TableCell>
-            <Badge
-              variant={
-                appointment.status === 'completed'
-                  ? 'default'
-                  : appointment.status === 'cancelled'
-                    ? 'destructive'
-                    : 'secondary'
-              }
-              className={cn(appointment.status === "upcoming" && "bg-primary/20 text-primary border-primary/20 hover:bg-primary/30", "capitalize")}
-            >
-              {appointment.status}
-            </Badge>
+            <div className="flex items-center gap-2">
+                 <Badge
+                  variant={
+                    appointment.status === 'completed'
+                      ? 'default'
+                      : appointment.status === 'cancelled'
+                        ? 'destructive'
+                        : 'secondary'
+                  }
+                  className={cn(appointment.status === "upcoming" && "bg-primary/20 text-primary border-primary/20 hover:bg-primary/30", "capitalize")}
+                >
+                  {appointment.status}
+                </Badge>
+                {appointment.status === 'cancelled' && appointment.cancellationReason && (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-pointer"/>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p className="max-w-xs text-sm">Reason: {appointment.cancellationReason}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )}
+            </div>
           </TableCell>
           <TableCell>{appointment.time} <br/> <span className="text-xs text-muted-foreground">{appointment.date}</span></TableCell>
           <TableCell>
@@ -154,7 +185,7 @@ export default function AppointmentsPage() {
                   size="sm"
                   variant="ghost"
                   className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={() => setAppointmentToCancel(appointment)}
+                  onClick={() => openCancelDialog(appointment)}
                 >
                   <Trash2 className="mr-2 h-4 w-4" /> Cancel
                 </Button>
@@ -264,6 +295,15 @@ export default function AppointmentsPage() {
               This action cannot be undone. This will permanently cancel the appointment with <strong>{appointmentToCancel?.patientName}</strong> on {appointmentToCancel?.date} at {appointmentToCancel?.time}.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="grid gap-2">
+            <label htmlFor="cancellation-reason" className="text-sm font-medium">Reason for Cancellation</label>
+            <Textarea 
+                id="cancellation-reason"
+                placeholder="Please provide a reason for cancelling..."
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setAppointmentToCancel(null)}>Back</AlertDialogCancel>
             <AlertDialogAction onClick={handleCancelAppointment} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">

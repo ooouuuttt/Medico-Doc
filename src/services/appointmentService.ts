@@ -47,6 +47,7 @@ export async function getAppointmentsForDoctor(doctorId: string): Promise<Appoin
         date: correctedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
         type: data.type as 'video' | 'chat',
         status: data.status as 'upcoming' | 'completed' | 'cancelled',
+        cancellationReason: data.cancellationReason || null,
       } as Appointment;
     });
 
@@ -62,19 +63,25 @@ export async function getAppointmentsForDoctor(doctorId: string): Promise<Appoin
 /**
  * Updates an appointment's status to 'cancelled' in Firestore.
  * @param appointmentId The ID of the appointment to cancel.
+ * @param reason The reason for the cancellation.
  * @returns An object indicating success or failure.
  */
 export async function cancelAppointment(
-  appointmentId: string
+  appointmentId: string,
+  reason: string
 ): Promise<{ success: boolean; error?: string }> {
   if (!appointmentId) {
     return { success: false, error: 'Appointment ID is required.' };
+  }
+  if (!reason || reason.trim() === '') {
+    return { success: false, error: 'A reason for cancellation is required.' };
   }
 
   try {
     const appointmentDocRef = doc(db, 'appointments', appointmentId);
     await updateDoc(appointmentDocRef, {
       status: 'cancelled',
+      cancellationReason: reason,
     });
     console.log('Appointment cancelled successfully:', appointmentId);
     return { success: true };

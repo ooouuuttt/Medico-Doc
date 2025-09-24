@@ -52,6 +52,7 @@ export type Appointment = {
   date: string;
   type: 'video' | 'chat';
   status: 'upcoming' | 'completed' | 'cancelled';
+  cancellationReason?: string;
 };
 
 export type Doctor = {
