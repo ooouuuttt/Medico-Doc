@@ -1,24 +1,51 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { patients, type Message } from '@/lib/data';
+import { type Message } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { SendHorizonal, Search } from 'lucide-react';
+import { SendHorizonal, Search, Loader2 } from 'lucide-react';
 import type { Patient } from '@/lib/types';
+import { db } from '@/lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+
+async function getAllPatients(): Promise<Patient[]> {
+    const patientsCol = collection(db, 'users');
+    const patientSnapshot = await getDocs(patientsCol);
+    const patientList = patientSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Patient));
+    return patientList;
+}
+
 
 export default function MessagesPage() {
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(patients[0]);
-  const [messages, setMessages] = useState<Message[]>(selectedPatient?.messages || []);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+
+  useEffect(() => {
+    async function fetchPatients() {
+        setIsLoading(true);
+        const fetchedPatients = await getAllPatients();
+        setPatients(fetchedPatients);
+        if (fetchedPatients.length > 0) {
+            setSelectedPatient(fetchedPatients[0]);
+            setMessages(fetchedPatients[0].messages || []);
+        }
+        setIsLoading(false);
+    }
+    fetchPatients();
+  }, []);
 
   const handleSelectPatient = (patient: Patient) => {
     setSelectedPatient(patient);
+    // In a real app, you would fetch messages for this patient from a 'chats' collection
     setMessages(patient.messages || []);
   };
 
@@ -35,6 +62,7 @@ export default function MessagesPage() {
 
     setMessages([...messages, message]);
     setNewMessage('');
+    // In a real app, you would save this message to Firestore
   };
 
   return (
@@ -52,29 +80,35 @@ export default function MessagesPage() {
         </CardHeader>
         <CardContent className="p-0 flex-grow">
           <ScrollArea className="h-full">
-            <div className="flex flex-col">
-              {patients.map((patient) => (
-                <button
-                  key={patient.id}
-                  onClick={() => handleSelectPatient(patient)}
-                  className={cn(
-                    'flex items-center gap-3 p-4 text-left hover:bg-muted/50 transition-colors w-full border-b',
-                    selectedPatient?.id === patient.id && 'bg-muted'
-                  )}
-                >
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={patient.avatar} alt={patient.name} data-ai-hint="person portrait"/>
-                    <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-grow">
-                    <p className="font-semibold">{patient.name}</p>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {patient.messages?.[patient.messages.length - 1]?.text}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
+            {isLoading ? (
+                <div className="flex justify-center items-center h-full">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary"/>
+                </div>
+            ) : (
+                <div className="flex flex-col">
+                {patients.map((patient) => (
+                    <button
+                    key={patient.id}
+                    onClick={() => handleSelectPatient(patient)}
+                    className={cn(
+                        'flex items-center gap-3 p-4 text-left hover:bg-muted/50 transition-colors w-full border-b',
+                        selectedPatient?.id === patient.id && 'bg-muted'
+                    )}
+                    >
+                    <Avatar className="h-10 w-10">
+                        <AvatarImage src={patient.avatar} alt={patient.name} data-ai-hint="person portrait"/>
+                        <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-grow">
+                        <p className="font-semibold">{patient.name}</p>
+                        <p className="text-sm text-muted-foreground truncate">
+                        {patient.messages?.[patient.messages.length - 1]?.text || 'No messages yet'}
+                        </p>
+                    </div>
+                    </button>
+                ))}
+                </div>
+            )}
           </ScrollArea>
         </CardContent>
       </Card>
@@ -92,7 +126,7 @@ export default function MessagesPage() {
             <CardContent className="flex-1 p-0 overflow-y-auto">
                 <ScrollArea className="h-full p-6">
                     <div className="flex flex-col gap-4">
-                        {messages.map((message) => (
+                        {messages.length > 0 ? messages.map((message) => (
                         <div
                             key={message.id}
                             className={cn(
@@ -112,7 +146,11 @@ export default function MessagesPage() {
                             <p className="text-xs text-right opacity-70 mt-1">{message.timestamp}</p>
                             </div>
                         </div>
-                        ))}
+                        )) : (
+                            <div className="text-center text-muted-foreground pt-10">
+                                No messages in this conversation yet.
+                            </div>
+                        )}
                     </div>
                 </ScrollArea>
             </CardContent>
@@ -132,7 +170,7 @@ export default function MessagesPage() {
           </>
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">
-            <p>Select a conversation to start chatting.</p>
+            {isLoading ? <Loader2 className="h-6 w-6 animate-spin"/> : <p>Select a conversation to start chatting.</p>}
           </div>
         )}
       </Card>
