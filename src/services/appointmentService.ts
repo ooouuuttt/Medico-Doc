@@ -3,7 +3,7 @@
 
 import { db } from '@/lib/firebase';
 import type { Appointment } from '@/lib/types';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, doc, updateDoc } from 'firebase/firestore';
 
 /**
  * Fetches appointments for a specific doctor from Firestore.
@@ -55,5 +55,32 @@ export async function getAppointmentsForDoctor(doctorId: string): Promise<Appoin
     console.error('Error fetching appointments: ', error);
     // In a real app, you might want to throw the error or handle it differently
     return [];
+  }
+}
+
+
+/**
+ * Updates an appointment's status to 'cancelled' in Firestore.
+ * @param appointmentId The ID of the appointment to cancel.
+ * @returns An object indicating success or failure.
+ */
+export async function cancelAppointment(
+  appointmentId: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!appointmentId) {
+    return { success: false, error: 'Appointment ID is required.' };
+  }
+
+  try {
+    const appointmentDocRef = doc(db, 'appointments', appointmentId);
+    await updateDoc(appointmentDocRef, {
+      status: 'cancelled',
+    });
+    console.log('Appointment cancelled successfully:', appointmentId);
+    return { success: true };
+  } catch (error) {
+    console.error('Error cancelling appointment:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return { success: false, error: errorMessage };
   }
 }
