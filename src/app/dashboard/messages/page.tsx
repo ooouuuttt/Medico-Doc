@@ -11,7 +11,8 @@ import { cn } from '@/lib/utils';
 import { SendHorizonal, Search, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import type { Conversation, Message } from '@/services/chatService';
-import { getConversationsForDoctor, listenToMessages, sendMessage } from '@/services/chatService';
+import { listenToMessages } from '@/services/chatService';
+import { getConversationsForDoctor, sendMessage } from '@/services/chatActions';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function MessagesPage() {
