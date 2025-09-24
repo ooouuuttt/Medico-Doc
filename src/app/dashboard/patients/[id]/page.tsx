@@ -154,9 +154,9 @@ export default function PatientDetailPage() {
                     <span>{patient.lastVisit}</span>
                 </div>
             </div>
-            <div className="mt-4 flex gap-2">
-                <Button className="flex-1" variant="outline"><MessageSquare className="mr-2 h-4 w-4"/> Chat</Button>
-                <Button className="flex-1"><Video className="mr-2 h-4 w-4"/> Video Call</Button>
+            <div className="mt-4 flex flex-wrap gap-2">
+                <Button className="w-full sm:flex-1" variant="outline"><MessageSquare className="mr-2 h-4 w-4"/> Chat</Button>
+                <Button className="w-full sm:flex-1"><Video className="mr-2 h-4 w-4"/> Video Call</Button>
             </div>
           </CardContent>
         </Card>
