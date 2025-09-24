@@ -1,21 +1,21 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { notFound, useParams } from 'next/navigation';
-import { patients } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import SymptomSummarizer from './symptom-summarizer';
 import { Button } from '@/components/ui/button';
-import { FileText, HeartPulse, ClipboardList, MessageSquare, Video, Stethoscope, FlaskConical } from 'lucide-react';
+import { FileText, HeartPulse, ClipboardList, MessageSquare, Video, Stethoscope, FlaskConical, Loader2 } from 'lucide-react';
 import PrescriptionGenerator from './prescription-generator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import type { Patient } from '@/lib/types';
+import { getPatientById } from '@/services/patientService';
 
-function VitalsCard({ patient }: { patient: (typeof patients)[0] }) {
+function VitalsCard({ patient }: { patient: Patient }) {
     if (!patient.vitals) return null;
     return (
         <Card>
@@ -32,7 +32,7 @@ function VitalsCard({ patient }: { patient: (typeof patients)[0] }) {
     );
 }
 
-function LabReportsCard({ patient }: { patient: (typeof patients)[0] }) {
+function LabReportsCard({ patient }: { patient: Patient }) {
     if (!patient.labReports || patient.labReports.length === 0) return (
         <Card>
             <CardHeader><CardTitle className="flex items-center gap-2"><FlaskConical/> Lab Reports</CardTitle></CardHeader>
@@ -68,7 +68,7 @@ function LabReportsCard({ patient }: { patient: (typeof patients)[0] }) {
     )
 }
 
-function PastPrescriptionsCard({ patient }: { patient: (typeof patients)[0] }) {
+function PastPrescriptionsCard({ patient }: { patient: Patient }) {
      if (!patient.pastPrescriptions || patient.pastPrescriptions.length === 0) return (
         <Card>
             <CardHeader><CardTitle className="flex items-center gap-2"><ClipboardList/> Past Prescriptions</CardTitle></CardHeader>
@@ -97,8 +97,32 @@ function PastPrescriptionsCard({ patient }: { patient: (typeof patients)[0] }) {
 export default function PatientDetailPage() {
   const params = useParams();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
-  const patient = patients.find((p) => p.id === id);
-  const [healthRecords, setHealthRecords] = useState(patient?.healthRecords || '');
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [healthRecords, setHealthRecords] = useState('');
+
+  useEffect(() => {
+    async function fetchPatient() {
+      if (id) {
+        setIsLoading(true);
+        const fetchedPatient = await getPatientById(id);
+        if (fetchedPatient) {
+          setPatient(fetchedPatient);
+          setHealthRecords(fetchedPatient.healthRecords || '');
+        }
+        setIsLoading(false);
+      }
+    }
+    fetchPatient();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin text-primary"/>
+      </div>
+    );
+  }
 
   if (!patient) {
     notFound();

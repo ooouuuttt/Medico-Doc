@@ -1,4 +1,6 @@
 
+import type { Timestamp } from 'firebase/firestore';
+
 export type Message = {
   id: string;
   sender: 'doctor' | 'patient';
