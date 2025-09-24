@@ -26,10 +26,11 @@ export async function getConversationsForDoctor(doctorId: string): Promise<Conve
   }
   try {
     const chatsCol = collection(db, 'chats');
-    const q = query(chatsCol, where('doctorId', '==', doctorId), orderBy('lastMessageTimestamp', 'desc'));
+    // Query without server-side ordering to avoid needing a composite index
+    const q = query(chatsCol, where('doctorId', '==', doctorId));
     const querySnapshot = await getDocs(q);
 
-    return querySnapshot.docs.map((docSnap) => {
+    const conversations = querySnapshot.docs.map((docSnap) => {
       const data = docSnap.data();
       const lastMessageTimestamp = data.lastMessageTimestamp as Timestamp | undefined;
       
@@ -37,9 +38,15 @@ export async function getConversationsForDoctor(doctorId: string): Promise<Conve
         id: docSnap.id,
         ...data,
         patientAvatar: `https://picsum.photos/seed/${data.patientId}/100/100`,
-        lastMessageTimestamp: lastMessageTimestamp ? lastMessageTimestamp.toDate() : new Date(),
+        lastMessageTimestamp: lastMessageTimestamp ? lastMessageTimestamp.toDate() : new Date(0), // Use epoch for unsent
       } as Conversation;
     });
+
+    // Sort the conversations in the application code
+    conversations.sort((a, b) => b.lastMessageTimestamp.getTime() - a.lastMessageTimestamp.getTime());
+    
+    return conversations;
+
   } catch (error) {
     console.error('Error fetching conversations:', error);
     return [];
