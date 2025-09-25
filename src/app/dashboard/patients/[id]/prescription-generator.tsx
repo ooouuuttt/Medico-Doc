@@ -24,7 +24,7 @@ import {
 
 import { FileText, Loader2, Sparkles, PlusCircle, Trash2, Save, XCircle, Printer, Send } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/useAuth.tsx';
 
 const initialGenerationState: PrescriptionGenerationState = {
   message: '',
@@ -126,7 +126,7 @@ export default function PrescriptionGenerator({ healthRecords, patientName }: { 
   const addMedication = () => {
     setPrescription({
       ...prescription,
-      medications: [...prescription.medications, { name: '', dosage: '', frequency: '' }],
+      medications: [...prescription.medications, { name: '', dosage: '', frequency: '', days: '' }],
     });
   };
 
@@ -198,9 +198,9 @@ export default function PrescriptionGenerator({ healthRecords, patientName }: { 
                                 <Label htmlFor={`med-dosage-${index}`}>Dosage</Label>
                                 <Input id={`med-dosage-${index}`} value={med.dosage} onChange={(e) => handleMedicationChange(index, 'dosage', e.target.value)} placeholder="e.g., 500mg"/>
                             </div>
-                            <div className="grid gap-1.5">
+                             <div className="grid gap-1.5">
                                 <Label htmlFor={`med-days-${index}`}>Days</Label>
-                                <Input id={`med-days-${index}`} value={med.days} onChange={(e) => handleMedicationChange(index, 'days', e.target.value)} placeholder="e.g., 3"/>
+                                <Input id={`med-days-${index}`} value={med.days || ''} onChange={(e) => handleMedicationChange(index, 'days', e.target.value)} placeholder="e.g., 3"/>
                             </div>
                              <div className="grid gap-1.5 col-span-full md:col-span-5">
                                 <Label htmlFor={`med-frequency-${index}`}>Frequency</Label>
