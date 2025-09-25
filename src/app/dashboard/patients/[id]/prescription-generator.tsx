@@ -24,7 +24,7 @@ import {
 
 import { FileText, Loader2, Sparkles, PlusCircle, Trash2, Save, XCircle, Printer, Send } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 
 const initialGenerationState: PrescriptionGenerationState = {
   message: '',
@@ -184,13 +184,13 @@ export default function PrescriptionGenerator({ healthRecords, patientName }: { 
                 <h3 className="font-semibold text-lg mb-2">Medications</h3>
                 <div className="space-y-4">
                     {prescription.medications.map((med, index) => (
-                        <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 border rounded-lg relative">
-                            <div className="md:col-span-4 flex justify-end">
+                        <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-2 p-3 border rounded-lg relative">
+                            <div className="md:col-span-5 flex justify-end">
                                 <Button variant="ghost" size="icon" className="absolute -top-1 -right-1 h-6 w-6" onClick={() => removeMedication(index)}>
                                     <Trash2 className="h-4 w-4 text-destructive"/>
                                 </Button>
                             </div>
-                            <div className="grid gap-1.5">
+                            <div className="grid gap-1.5 md:col-span-2">
                                 <Label htmlFor={`med-name-${index}`}>Name</Label>
                                 <Input id={`med-name-${index}`} value={med.name} onChange={(e) => handleMedicationChange(index, 'name', e.target.value)} placeholder="e.g., Paracetamol"/>
                             </div>
@@ -198,7 +198,11 @@ export default function PrescriptionGenerator({ healthRecords, patientName }: { 
                                 <Label htmlFor={`med-dosage-${index}`}>Dosage</Label>
                                 <Input id={`med-dosage-${index}`} value={med.dosage} onChange={(e) => handleMedicationChange(index, 'dosage', e.target.value)} placeholder="e.g., 500mg"/>
                             </div>
-                            <div className="grid gap-1.5 col-span-full md:col-span-2">
+                            <div className="grid gap-1.5">
+                                <Label htmlFor={`med-days-${index}`}>Days</Label>
+                                <Input id={`med-days-${index}`} value={med.days} onChange={(e) => handleMedicationChange(index, 'days', e.target.value)} placeholder="e.g., 3"/>
+                            </div>
+                             <div className="grid gap-1.5 col-span-full md:col-span-5">
                                 <Label htmlFor={`med-frequency-${index}`}>Frequency</Label>
                                 <Input id={`med-frequency-${index}`} value={med.frequency} onChange={(e) => handleMedicationChange(index, 'frequency', e.target.value)} placeholder="e.g., Twice a day after meals"/>
                             </div>
@@ -245,6 +249,7 @@ export default function PrescriptionGenerator({ healthRecords, patientName }: { 
                                 <li key={index} className="grid grid-cols-3 gap-1 text-sm">
                                     <span className="font-medium col-span-3">{med.name}</span>
                                     <span className="text-muted-foreground">{med.dosage}</span>
+                                    <span className="text-muted-foreground">{med.days ? `${med.days} days` : ''}</span>
                                     <span className="text-muted-foreground col-span-2">{med.frequency}</span>
                                 </li>
                             ))}

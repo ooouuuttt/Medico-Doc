@@ -61,6 +61,7 @@ const PrescriptionDataSchema = z.object({
         name: z.string(),
         dosage: z.string(),
         frequency: z.string(),
+        days: z.string().optional(),
     })),
     instructions: z.string(),
     followUp: z.string(),

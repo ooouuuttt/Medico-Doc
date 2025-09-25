@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent that generates a medical prescription based on patient symptoms.
@@ -14,6 +15,7 @@ const MedicationSchema = z.object({
   name: z.string().describe('The name of the medication.'),
   dosage: z.string().describe('The prescribed dosage (e.g., "500mg").'),
   frequency: z.string().describe('How often to take the medication (e.g., "Twice a day").'),
+  days: z.string().optional().describe('The number of days the medication should be taken.'),
 });
 
 const GeneratePrescriptionInputSchema = z.object({
@@ -49,7 +51,7 @@ const prompt = ai.definePrompt({
   Patient Summary:
   {{{symptomsSummary}}}
 
-  Please provide a list of medications with their dosage and frequency, general instructions for the patient, and a recommendation for a follow-up. Ensure the prescription is clear, concise, and follows standard medical practices. Do not add any disclaimers.`,
+  Please provide a list of medications with their dosage, frequency, and duration in days. Also include general instructions for the patient, and a recommendation for a follow-up. Ensure the prescription is clear, concise, and follows standard medical practices. Do not add any disclaimers.`,
 });
 
 const generatePrescriptionFlow = ai.defineFlow(
