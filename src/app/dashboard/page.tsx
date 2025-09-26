@@ -1,21 +1,15 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import {
   Activity,
   ArrowUpRight,
   CalendarCheck,
-  CircleUser,
-  CreditCard,
-  DollarSign,
-  Menu,
-  Package2,
-  Search,
   Users,
 } from 'lucide-react';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,17 +28,59 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { appointments } from '@/lib/data';
+import { appointments as staticAppointments } from '@/lib/data';
 import Link from 'next/link';
 import ConsultationTrendsChart from '@/components/consultation-trends-chart';
 import { Loader2 } from 'lucide-react';
+import { getPatientsForDoctor } from '@/services/patientService';
+import type { Patient, Appointment } from '@/lib/types';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 export default function Dashboard() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (loading) {
+  useEffect(() => {
+    if (user) {
+      const fetchInitialData = async () => {
+        const fetchedPatients = await getPatientsForDoctor(user.uid);
+        setPatients(fetchedPatients);
+        setIsLoading(false);
+      };
+
+      fetchInitialData();
+
+      const appointmentsCol = collection(db, 'appointments');
+      const q = query(appointmentsCol, where('doctorId', '==', user.uid));
+      
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const fetchedAppointments = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Appointment[];
+        setAppointments(fetchedAppointments);
+      });
+
+      return () => unsubscribe();
+    }
+  }, [user]);
+
+  const upcomingAppointmentsCount = appointments.filter(
+    (app) => app.status === 'upcoming'
+  ).length;
+
+  const recentAppointments = [...appointments]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+
+
+  if (authLoading || isLoading) {
     return (
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -59,26 +95,14 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Consultations
+              Total Patients
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1,250</div>
-            <p className="text-xs text-muted-foreground">
-              +20.1% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New Patients</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+23</div>
+            <div className="text-2xl font-bold">{patients.length}</div>
             <p className="text-xs text-muted-foreground">
-              +180.1% from last month
+              All-time patient count
             </p>
           </CardContent>
         </Card>
@@ -90,8 +114,8 @@ export default function Dashboard() {
             <CalendarCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">+2 since yesterday</p>
+            <div className="text-2xl font-bold">{upcomingAppointmentsCount}</div>
+            <p className="text-xs text-muted-foreground">Live updates</p>
           </CardContent>
         </Card>
         <Card>
@@ -103,6 +127,22 @@ export default function Dashboard() {
             <div className="text-2xl font-bold">+573</div>
             <p className="text-xs text-muted-foreground">
               +201 since last hour
+            </p>
+          </CardContent>
+        </Card>
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Completed
+            </CardTitle>
+            <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+                {appointments.filter(app => app.status === 'completed').length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total consultations
             </p>
           </CardContent>
         </Card>
@@ -136,23 +176,23 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {appointments.slice(0, 5).map((appointment) => (
+                {recentAppointments.map((appointment) => (
                   <TableRow key={appointment.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
                             <AvatarImage src={appointment.patientAvatar} alt={appointment.patientName} data-ai-hint="person portrait" />
-                            <AvatarFallback>{appointment.patientName.charAt(0)}</AvatarFallback>
+                            <AvatarFallback>{appointment.patientName?.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="font-medium">{appointment.patientName}</div>
                       </div>
                     </TableCell>
-                    <TableCell className="hidden xl:table-column">
-                      <Badge variant={appointment.type === 'Video' ? 'default' : 'secondary'} className="bg-primary/20 text-primary border-primary/20">
+                    <TableCell className="hidden xl:table-column capitalize">
+                      <Badge variant="outline">
                           {appointment.type}
                       </Badge>
                     </TableCell>
-                    <TableCell className="hidden xl:table-column">
+                    <TableCell className="hidden xl:table-column capitalize">
                       <Badge variant="outline">{appointment.status}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
