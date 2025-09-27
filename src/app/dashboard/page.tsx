@@ -28,13 +28,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { appointments as staticAppointments } from '@/lib/data';
 import Link from 'next/link';
 import ConsultationTrendsChart from '@/components/consultation-trends-chart';
 import { Loader2 } from 'lucide-react';
 import { getPatientsForDoctor } from '@/services/patientService';
 import type { Patient, Appointment } from '@/lib/types';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
@@ -47,6 +46,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (user) {
       const fetchInitialData = async () => {
+        setIsLoading(true);
         const fetchedPatients = await getPatientsForDoctor(user.uid);
         setPatients(fetchedPatients);
         setIsLoading(false);
@@ -58,10 +58,17 @@ export default function Dashboard() {
       const q = query(appointmentsCol, where('doctorId', '==', user.uid));
       
       const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const fetchedAppointments = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Appointment[];
+        const fetchedAppointments = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            // Convert Firestore Timestamp to Date object
+            const date = (data.date as Timestamp).toDate();
+            return {
+                id: doc.id,
+                ...data,
+                date: date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                time: date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+            } as Appointment;
+        });
         setAppointments(fetchedAppointments);
       });
 
@@ -74,7 +81,12 @@ export default function Dashboard() {
   ).length;
 
   const recentAppointments = [...appointments]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .sort((a, b) => {
+        // We need to convert date strings back to date objects for sorting
+        const dateA = new Date(`${a.date} ${a.time}`);
+        const dateB = new Date(`${b.date} ${b.time}`);
+        return dateB.getTime() - dateA.getTime();
+    })
     .slice(0, 5);
 
 
