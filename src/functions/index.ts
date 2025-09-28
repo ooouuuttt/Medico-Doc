@@ -3,6 +3,7 @@
 
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { createNotification } from '@/ai/flows/ai-create-notification';
+import { createMessageNotification } from '@/ai/flows/ai-create-message-notification';
 
 /**
  * A Firebase Function that triggers when an appointment document is written.
@@ -39,6 +40,63 @@ export const onappointmentwritten = onDocumentWritten(
       } catch (error) {
         console.error(
           `Error calling createNotification flow for appointment ${event.params.appointmentId}:`,
+          error
+        );
+      }
+    }
+  }
+);
+
+/**
+ * A Firebase Function that triggers when a new message is written in any chat.
+ * If the message is from a patient, it creates a notification for the doctor.
+ */
+export const onmessagewritten = onDocumentWritten(
+  'chats/{chatId}/messages/{messageId}',
+  async (event) => {
+    // Only trigger on create events (no before data)
+    if (!event.data?.after.exists() || event.data.before.exists()) {
+      return;
+    }
+
+    const messageData = event.data.after.data();
+    const chatDocRef = event.data.after.ref.parent.parent;
+    
+    if (!chatDocRef) {
+        console.error('Could not get parent chat document reference.');
+        return;
+    }
+
+    const chatDoc = await chatDocRef.get();
+    if (!chatDoc.exists) {
+        console.error(`Chat document ${chatDocRef.id} not found.`);
+        return;
+    }
+    const chatData = chatDoc.data();
+
+    // Check if the message sender is NOT the doctor (i.e., it's the patient)
+    if (messageData.senderId !== chatData.doctorId) {
+      console.log(`New message from patient detected in chat: ${chatDocRef.id}`);
+
+      try {
+        const result = await createMessageNotification({
+          doctorId: chatData.doctorId,
+          patientName: chatData.patientName,
+          messageText: messageData.text,
+        });
+
+        if (result.success) {
+          console.log(
+            `Successfully created notification for new message in chat ${chatDocRef.id}`
+          );
+        } else {
+          console.error(
+            `Failed to create notification for new message in chat ${chatDocRef.id}`
+          );
+        }
+      } catch (error) {
+        console.error(
+          `Error calling createMessageNotification flow for chat ${chatDocRef.id}:`,
           error
         );
       }

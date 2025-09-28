@@ -85,14 +85,9 @@ export async function sendMessage(chatId: string, message: { text: string; sende
       lastMessageTimestamp: serverTimestamp(),
     });
 
-    // 3. Send notification if the sender is not the doctor
-    if (message.senderId !== chatData.doctorId) {
-        await createMessageNotification({
-            doctorId: chatData.doctorId,
-            patientName: chatData.patientName,
-            messageText: message.text,
-        });
-    }
+    // NOTE: The notification for patient messages is now handled by a Firebase Function.
+    // This ensures notifications are sent even if the message comes from outside this app.
+    // A notification for a doctor's own message might be redundant, so we don't send one here.
 
   } catch (error) {
     console.error('Error sending message:', error);
