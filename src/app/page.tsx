@@ -93,6 +93,9 @@ export default function LoginPage() {
             <Button type="submit" disabled={isLoading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
               {isLoading ? <Loader2 className="animate-spin" /> : <><LogIn className="mr-2 h-4 w-4" /> Login</>}
             </Button>
+            <p className="text-xs text-center text-destructive">
+              Please sign up using email and password before logging in with Google.
+            </p>
             <Button variant="outline" type="button" onClick={handleGoogleSignIn} className="w-full">
               <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 23.4 172.9 61.5l-62.7 62.7C337 97.4 297.9 80 248 80c-82.8 0-150.5 67.7-150.5 150.5S165.2 406.5 248 406.5c70.3 0 126.5-48.4 140.8-111.9H248v-85.3h236.1c2.3 12.7 3.9 26.9 3.9 41.4z"></path></svg>
               Sign in with Google
