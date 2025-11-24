@@ -213,8 +213,7 @@ export default function AppointmentsPage() {
                 )}
                 <Button
                   size="sm"
-                  variant="ghost"
-                  className="text-primary hover:text-primary hover:bg-primary/10"
+                  variant="outline"
                   onClick={() => handleCompleteAppointment(appointment.id)}
                 >
                   <CheckCircle className="mr-2 h-4 w-4" /> Mark as Completed
