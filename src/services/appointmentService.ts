@@ -110,3 +110,29 @@ export async function cancelAppointment(
     return { success: false, error: errorMessage };
   }
 }
+
+/**
+ * Updates an appointment's status to 'completed' in Firestore.
+ * @param appointmentId The ID of the appointment to complete.
+ * @returns An object indicating success or failure.
+ */
+export async function completeAppointment(
+  appointmentId: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!appointmentId) {
+    return { success: false, error: 'Appointment ID is required.' };
+  }
+
+  try {
+    const appointmentDocRef = doc(db, 'appointments', appointmentId);
+    await updateDoc(appointmentDocRef, {
+      status: 'completed',
+    });
+    console.log('Appointment marked as completed:', appointmentId);
+    return { success: true };
+  } catch (error) {
+    console.error('Error completing appointment:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return { success: false, error: errorMessage };
+  }
+}

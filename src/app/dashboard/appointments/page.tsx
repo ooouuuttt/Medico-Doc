@@ -2,9 +2,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { File, ListFilter, MoreHorizontal, Loader2, Video, Trash2, Info } from 'lucide-react';
+import { File, ListFilter, MoreHorizontal, Loader2, Video, Trash2, Info, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth.tsx';
-import { getAppointmentsForDoctor, cancelAppointment } from '@/services/appointmentService';
+import { getAppointmentsForDoctor, cancelAppointment, completeAppointment } from '@/services/appointmentService';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -113,6 +113,27 @@ export default function AppointmentsPage() {
     setAppointmentToCancel(null);
     setCancellationReason('');
   };
+
+  const handleCompleteAppointment = async (appointmentId: string) => {
+    const result = await completeAppointment(appointmentId);
+    if (result.success) {
+      setAppointments(prev =>
+        prev.map(app =>
+          app.id === appointmentId ? { ...app, status: 'completed' } : app
+        )
+      );
+      toast({
+        title: 'Appointment Completed',
+        description: 'The appointment has been marked as completed.',
+      });
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: result.error || 'Could not mark the appointment as completed.',
+      });
+    }
+  };
   
   const openCancelDialog = (appointment: Appointment) => {
     setAppointmentToCancel(appointment);
@@ -190,6 +211,14 @@ export default function AppointmentsPage() {
                       </Link>
                     </Button>
                 )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-primary hover:text-primary hover:bg-primary/10"
+                  onClick={() => handleCompleteAppointment(appointment.id)}
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" /> Mark as Completed
+                </Button>
                  <Button
                   size="sm"
                   variant="ghost"
