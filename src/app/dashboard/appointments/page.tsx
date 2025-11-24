@@ -176,11 +176,20 @@ export default function AppointmentsPage() {
           <TableCell>
              {appointment.status === 'upcoming' && (
               <div className="flex items-center gap-2">
-                <Button asChild size="sm" variant="outline">
-                  <Link href={`/dashboard/consultation/${appointment.id}`}>
-                    <Video className="mr-2 h-4 w-4" /> Join
-                  </Link>
-                </Button>
+                {appointment.type === 'video' && appointment.zoomStartUrl ? (
+                    <Button asChild size="sm" variant="outline">
+                      <Link href={appointment.zoomStartUrl} target="_blank">
+                        <Video className="mr-2 h-4 w-4" /> Join
+                      </Link>
+                    </Button>
+                ) : (
+                    <Button asChild size="sm" variant="outline">
+                      <Link href={`/dashboard/consultation/${appointment.id}`}>
+                         {appointment.type === 'video' ? <Video className="mr-2 h-4 w-4" /> : null}
+                         {appointment.type === 'video' ? 'Join' : 'Chat'}
+                      </Link>
+                    </Button>
+                )}
                  <Button
                   size="sm"
                   variant="ghost"

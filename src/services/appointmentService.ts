@@ -50,6 +50,8 @@ export async function getAppointmentsForDoctor(doctorId: string): Promise<Appoin
         type: data.type as 'video' | 'chat',
         status: data.status as 'upcoming' | 'completed' | 'cancelled',
         cancellationReason: data.cancellationReason || null,
+        zoomStartUrl: data.start_url || null,
+        zoomJoinUrl: data.join_url || null,
       } as Appointment;
     });
 

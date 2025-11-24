@@ -53,6 +53,8 @@ export type Appointment = {
   type: 'video' | 'chat';
   status: 'upcoming' | 'completed' | 'cancelled';
   cancellationReason?: string;
+  zoomStartUrl?: string;
+  zoomJoinUrl?: string;
 };
 
 export type Doctor = {
